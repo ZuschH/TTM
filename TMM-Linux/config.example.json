@@ -1,0 +1,101 @@
+{
+  "product": {
+    "contact_name": "",
+    "contact_url": ""
+  },
+  "recording": {
+    "reference": ""
+  },
+  "serial": {
+    "device": "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_B001YLYP-if00-port0",
+    "baudrate": 19200,
+    "parity": "E",
+    "stopbits": 1,
+    "bytesize": 8,
+    "timeout_seconds": 0.75
+  },
+  "inverters": [
+    {
+      "name": "VFAS1-4037PL",
+      "model": "VF-AS1",
+      "slave_id": 1,
+      "enabled": true
+    }
+  ],
+  "polling": {
+    "interval_seconds": 1.0,
+    "intervals": {
+      "fast": 0.2,
+      "normal": 0.5,
+      "diagnostic": 5.0,
+      "information": 3600.0
+    },
+    "retries": 2,
+    "retry_delay_seconds": 0.15,
+    "reconnect_delay_seconds": 2.0
+  },
+  "storage": {
+    "database": "/var/lib/tmm/measurements.sqlite3",
+    "retention_days": 365,
+    "cleanup_interval_seconds": 3600,
+    "export_max_rows": 250000,
+    "parameter_write_max_backup_age_minutes": 60,
+    "change_logging": {
+      "enabled": true,
+      "initial_snapshot_on_start": true,
+      "communication_unreachable_after_transport_errors": 3,
+      "default_analog_delta": 0.1,
+      "successful_cycle_interval_seconds": 60.0,
+      "thresholds": {
+        "output_frequency": 0.05,
+        "frequency_setpoint": 0.05,
+        "output_current": 0.1,
+        "dc_input_voltage": 0.1,
+        "output_voltage": 0.1,
+        "braking_resistor_load": 1.0,
+        "fm_analog_output": 0.5,
+        "inverter_internal_temperature": 1.0,
+        "power_board_temperature": 1.0,
+        "speed_feedback": 0.05,
+        "speed_feedback_filtered": 0.05,
+        "torque": 0.1,
+        "torque_command": 0.1,
+        "torque_current": 0.1,
+        "exciting_current": 0.1,
+        "motor_overload_factor": 0.1,
+        "inverter_overload_factor": 0.1,
+        "motor_load_factor": 1.0,
+        "inverter_load_factor": 1.0,
+        "input_power": 0.01,
+        "output_power": 0.01,
+        "calculated_motor_speed": 1.0,
+        "machine_speed": 1.0,
+        "actual_output_current": 0.1,
+        "actual_output_voltage": 1.0,
+        "actual_motor_torque": 0.1,
+        "mechanical_power": 0.01
+      }
+    }
+  },
+  "alerts": {
+    "system": {
+      "cpu_percent": {"warning": 80, "critical": 95},
+      "temperature_celsius": {"warning": 70, "critical": 80},
+      "memory_percent": {"warning": 85, "critical": 95},
+      "disk_percent": {"warning": 85, "critical": 95}
+    },
+    "metrics": {
+      "output_current": {"warning": 90, "critical": 110},
+      "dc_input_voltage": {"warning": 110, "critical": 120},
+      "braking_resistor_load": {"warning": 70, "critical": 90},
+      "inverter_internal_temperature": {"warning": 70, "critical": 85},
+      "power_board_temperature": {"warning": 80, "critical": 95}
+    }
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "stale_after_seconds": 10,
+    "allow_remote_administration": false
+  }
+}

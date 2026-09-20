@@ -1,0 +1,17 @@
+observed_at,inverter,slave_id,metric,register_address,raw_value,value,unit
+2026-09-18T08:00:00+00:00,VFAS1-4037PL,1,frequency_setpoint,0xFD02,0,0.0,Hz
+2026-09-18T08:00:00+00:00,VFAS1-4037PL,1,output_frequency,0xFD00,0,0.0,Hz
+2026-09-18T08:00:00+00:00,VFAS1-4037PL,1,output_current,0xFD03,0,0.0,%
+2026-09-18T08:00:00+00:00,VFAS1-4037PL,1,input_terminal_status,0xFD06,0,0,raw
+2026-09-18T08:00:00+00:00,VFAS1-4037PL,1,communication_status,0xFFFF,2,2,raw
+2026-09-18T08:00:10+00:00,VFAS1-4037PL,1,frequency_setpoint,0xFD02,2500,25.0,Hz
+2026-09-18T08:00:10+00:00,VFAS1-4037PL,1,input_terminal_status,0xFD06,17,17,raw
+2026-09-18T08:00:12+00:00,VFAS1-4037PL,1,output_frequency,0xFD00,2400,24.0,Hz
+2026-09-18T08:00:12+00:00,VFAS1-4037PL,1,output_current,0xFD03,1850,18.5,%
+2026-09-18T08:00:20+00:00,VFAS1-4037PL,1,communication_status,0xFFFF,0,0,raw
+2026-09-18T08:00:28+00:00,VFAS1-4037PL,1,communication_status,0xFFFF,2,2,raw
+2026-09-18T08:00:30+00:00,VFAS1-4037PL,1,frequency_setpoint,0xFD02,5000,50.0,Hz
+2026-09-18T08:00:30+00:00,VFAS1-4037PL,1,input_terminal_status,0xFD06,49,49,raw
+2026-09-18T08:00:32+00:00,VFAS1-4037PL,1,alarm_information_1,0xFC91,8,8,raw
+2026-09-18T08:00:34+00:00,VFAS1-4037PL,1,output_frequency,0xFD00,4975,49.75,Hz
+2026-09-18T08:00:34+00:00,VFAS1-4037PL,1,output_current,0xFD03,4230,42.3,%

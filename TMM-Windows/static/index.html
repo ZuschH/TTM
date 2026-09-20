@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Toshiba Modbus Monitor (TMM) · V1.0</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <p class="eyebrow" data-i18n="header.eyebrow">TMM · Version 1.0</p>
+      <h1 data-i18n="header.title">Toshiba Modbus Monitor</h1>
+    </div>
+    <div class="header-actions">
+      <label><span data-i18n="language">Language</span>
+        <select id="language"><option value="en">English</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="ja">日本語</option></select>
+      </label>
+      <button id="alert-indicator" class="alert-indicator clear" type="button" title="No active messages" aria-label="No active messages"><span aria-hidden="true">●</span><strong id="alert-indicator-count">0</strong></button>
+      <div id="connection" class="status unknown"><span></span><strong>Connecting …</strong></div>
+    </div>
+  </header>
+
+  <main>
+    <div class="section-controls" aria-label="Section display controls">
+      <button id="section-toggle-all" class="section-action" type="button">Collapse all sections</button>
+    </div>
+
+    <section class="panel device-info-panel" aria-labelledby="device-info-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="info.eyebrow">Device</p><h2 id="device-info-title" data-i18n="info.title">Device information</h2></div>
+      </div>
+      <div id="device-information" class="device-information"><p class="hint" data-i18n="info.waiting">Waiting for device information …</p></div>
+    </section>
+
+    <section class="panel alerts-panel" aria-labelledby="alerts-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="alerts.eyebrow">Messages</p><h2 id="alerts-title" data-i18n="alerts.title">Information, warnings &amp; critical conditions</h2></div>
+      </div>
+      <div id="alerts" class="alerts"><p class="alert-clear" data-i18n="alerts.clear">No active messages</p></div>
+    </section>
+
+    <section aria-labelledby="live-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">Live</p><h2 id="live-title" data-i18n="live.title">Current measurements</h2><p class="hint live-order-hint" data-i18n="live.orderHint">Drag cards to arrange them. The order is retained.</p></div>
+        <p id="updated" data-i18n="live.noData">No data yet</p>
+      </div>
+      <div id="cards" class="cards"></div>
+    </section>
+
+    <section class="io-panel" aria-labelledby="io-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="io.eyebrow">Hardware</p><h2 id="io-title" data-i18n="io.title">Terminals &amp; analog output</h2></div>
+      </div>
+      <div id="io-devices" class="io-devices"><p class="hint" data-i18n="io.waiting">Waiting for I/O data …</p></div>
+    </section>
+
+    <section class="panel" aria-labelledby="history-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="history.eyebrow">History</p><h2 id="history-title" data-i18n="history.title">Measurement history</h2></div>
+        <label><span data-i18n="history.metric">Metric</span> <select id="metric"></select></label>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart" role="img" aria-label="Zeitverlauf des gewählten Messwerts"></canvas>
+        <p id="chart-empty" data-i18n="history.empty">No history data available.</p>
+      </div>
+      <div id="chart-meta" class="chart-meta"></div>
+    </section>
+
+    <section class="panel fault-panel" aria-labelledby="fault-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="fault.eyebrow">Diagnostic memory</p><h2 id="fault-title" data-i18n="fault.title">Trips &amp; retained operating values</h2></div>
+      </div>
+      <div id="fault-memory" class="fault-memory"><p class="hint" data-i18n="fault.waiting">Waiting for diagnostic data …</p></div>
+    </section>
+
+    <section class="panel compact" aria-labelledby="storage-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="storage.eyebrow">Data</p><h2 id="storage-title" data-i18n="storage.title">Storage &amp; export</h2></div>
+        <div class="export-actions">
+          <a id="export" class="button" href="/api/v1/export.csv" data-i18n="storage.exportAll">Export all data as CSV</a>
+          <a id="export-selected" class="button compact-button" href="/api/v1/export.csv" hidden></a>
+        </div>
+      </div>
+      <dl id="storage"></dl>
+      <p class="hint" data-i18n="storage.hint">The export is limited to the maximum row count defined in the configuration.</p>
+    </section>
+
+    <section class="panel compact" aria-labelledby="recording-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="recording.eyebrow">Recording</p><h2 id="recording-title" data-i18n="recording.title">Investigation &amp; database</h2></div>
+      </div>
+      <p><span data-i18n="recording.current">Current reference</span>: <strong id="recording-current">—</strong></p>
+      <label class="recording-reference"><span data-i18n="recording.newReference">Reference for the new recording</span><input id="recording-reference" maxlength="240" placeholder="KOM-2026-041 · Machine · Test"></label>
+      <div class="recording-actions"><button id="recording-archive" class="button" type="button" data-i18n="recording.archive">Archive database and start new recording</button></div>
+      <p id="recording-result" class="hint"></p>
+      <details class="danger-zone">
+        <summary data-i18n="recording.danger">Danger zone: permanently delete current database</summary>
+        <p data-i18n="recording.deleteHelp">Enter DELETE three times, separated by spaces. This operation cannot be undone.</p>
+        <input id="recording-delete-confirmation" autocomplete="off">
+        <button id="recording-delete" type="button" data-i18n="recording.delete">Permanently delete and start new recording</button>
+      </details>
+    </section>
+
+    <section class="panel compact" aria-labelledby="channels-title">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="channels.eyebrow">Recording</p><h2 id="channels-title" data-i18n="channels.title">Measurement channels</h2></div></div>
+      <div class="channel-toolbar"><label><span data-i18n="channels.inverter">Inverter</span><select id="channels-inverter"></select></label><label class="measurement-hints-toggle"><input id="measurement-hints" type="checkbox"><span data-i18n="channels.hints">Show measurement hints</span></label></div>
+      <p class="hint" data-i18n="channels.help">Off reduces bus load; Live shows the current value without history; Record stores value changes.</p>
+      <div id="channel-list" class="channel-list"></div>
+      <div class="recording-actions"><button id="channels-save" class="button" type="button" data-i18n="channels.save">Apply channel selection</button></div>
+      <p id="channels-result" class="hint"></p>
+    </section>
+
+    <section class="panel compact" aria-labelledby="comm-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="comm.eyebrow">Diagnostics</p><h2 id="comm-title" data-i18n="comm.title">Communication</h2></div>
+        <div class="header-links"><a href="/README.md" target="_blank" data-i18n="comm.manual">User manual</a><a href="/docs" data-i18n="comm.api">API documentation</a></div>
+      </div>
+      <dl id="diagnostics"></dl>
+      <p id="last-error" class="error"></p>
+    </section>
+
+    <section class="panel compact" aria-labelledby="engineering-title">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="engineering.eyebrow">Configuration</p><h2 id="engineering-title" data-i18n="engineering.title">Engineering values</h2></div></div>
+      <div class="engineering-grid">
+        <label><span data-i18n="engineering.inverter">Inverter</span><select id="engineering-inverter"></select></label>
+        <label><span data-i18n="engineering.factor">Machine-speed factor</span><input id="engineering-factor" type="number" min="0.000001" step="any"></label>
+        <label><span data-i18n="engineering.unit">Machine-speed unit</span><input id="engineering-unit" maxlength="20"></label>
+        <label><span data-i18n="engineering.current">Rated output current (A)</span><input id="engineering-current" type="number" min="0.000001" step="any"></label>
+        <label><span data-i18n="engineering.voltage">Rated output voltage (V)</span><input id="engineering-voltage" type="number" min="0.000001" step="any"></label>
+        <label><span data-i18n="engineering.motorPower">Motor rated power (kW, optional)</span><input id="engineering-motor-power" type="number" min="0.000001" step="any"></label>
+        <label><span data-i18n="engineering.motorSpeed">Motor rated speed (rpm, optional)</span><input id="engineering-motor-speed" type="number" min="0.000001" step="any"></label>
+      </div>
+      <div class="recording-actions"><button id="engineering-save" class="button" type="button" data-i18n="engineering.save">Apply settings</button></div>
+      <p id="engineering-result" class="hint"></p>
+    </section>
+
+    <section class="panel compact" aria-labelledby="parameter-backup-title">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="backup.eyebrow">Parameters</p><h2 id="parameter-backup-title" data-i18n="backup.title">PCM002Z parameter backup</h2></div></div>
+      <p class="hint" data-i18n="backup.help">Select an original PCM002Z .pcm file for the configured model. TMM uses its register list as a template and reads a new complete dataset.</p>
+      <div class="engineering-grid">
+        <label><span data-i18n="backup.inverter">Inverter</span><select id="backup-inverter"></select></label>
+        <label><span data-i18n="backup.template">PCM template</span><input id="backup-template" type="file" accept=".pcm"></label>
+      </div>
+      <div class="recording-actions"><button id="backup-create" class="button" type="button" data-i18n="backup.create">Read parameter backup</button></div>
+      <p id="backup-result" class="hint"></p>
+      <div id="backup-files" class="backup-files"></div>
+    </section>
+
+    <section class="panel compact" aria-labelledby="parameter-preview-title">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="preview.eyebrow">Import</p><h2 id="parameter-preview-title" data-i18n="preview.title">PCM import preview</h2></div></div>
+      <p class="hint" data-i18n="preview.help">Compares a PCM file with the latest backup. This preview never writes to the inverter.</p>
+      <div class="engineering-grid">
+        <label><span data-i18n="preview.inverter">Inverter</span><select id="preview-inverter"></select></label>
+        <label><span data-i18n="preview.file">Target PCM file</span><input id="preview-file" type="file" accept=".pcm"></label>
+        <label><span data-i18n="preview.csv">Matching PCM002Z CSV limits</span><input id="preview-csv" type="file" accept=".csv"></label>
+      </div>
+      <div class="recording-actions"><button id="preview-create" class="button" type="button" data-i18n="preview.compare">Compare safely</button></div>
+      <div class="preview-toolbar"><p id="preview-result" class="hint"></p><label><span data-i18n="preview.filter">Show</span><select id="preview-filter"><option value="all" data-i18n="preview.filterAll">All changes</option><option value="candidate" data-i18n="preview.filterCandidates">Configuration candidates only</option></select></label></div>
+      <div class="preview-table-wrap"><table id="preview-table" hidden><thead><tr><th></th><th data-i18n="preview.address">Address</th><th data-i18n="preview.current">Current</th><th data-i18n="preview.target">Target</th><th data-i18n="preview.class">Class</th></tr></thead><tbody></tbody></table></div>
+      <details class="danger-zone"><summary data-i18n="write.title">Write selected parameters</summary><p data-i18n="write.help">Up to 32 configuration candidates are written sequentially. Before every parameter, TMM confirms standstill three times, writes, reads back, and logs the change. A failed batch is never rolled back automatically.</p><div class="recording-actions"><button id="write-preflight" class="button" type="button" data-i18n="write.preflight">Check write preconditions</button></div><p id="write-preflight-result" class="hint"></p><p id="write-selection" class="write-selection" data-i18n="write.none">No configuration candidates selected.</p><label><span id="write-confirmation-label" data-i18n="write.confirm">Enter WRITE followed by all selected addresses in ascending order</span><input id="write-confirmation" autocomplete="off"></label><button id="write-selected" type="button" disabled data-i18n="write.button">Write selected parameters</button><p id="write-result" class="hint"></p></details>
+      <div class="parameter-audit"><div class="audit-heading"><h3 data-i18n="audit.title">Verified parameter changes</h3><a class="button compact-button" href="/api/v1/parameter-changes.csv" data-i18n="audit.export">Export audit CSV</a></div><p class="hint" data-i18n="audit.help">The latest verified writes, retained in the current SQLite recording.</p><div class="preview-table-wrap"><table id="parameter-audit-table"><thead><tr><th data-i18n="audit.time">Time</th><th data-i18n="audit.inverter">Inverter</th><th data-i18n="audit.address">Address</th><th data-i18n="audit.old">Old</th><th data-i18n="audit.new">New</th><th data-i18n="audit.verified">Verified</th></tr></thead><tbody></tbody></table></div><p id="parameter-audit-empty" class="hint"></p></div>
+    </section>
+  </main>
+
+  <footer class="product-footer">
+    <img src="/static/tmm-product-mark.png" alt="" width="112" height="112">
+    <div>
+      <strong>Toshiba Modbus Monitor</strong>
+      <p><span id="footer-version">Version 1.0.0</span> · <span data-i18n="footer.summary">read-only · refreshes every 3 seconds</span></p>
+      <p class="footer-links"><a href="/README.md" target="_blank" data-i18n="comm.manual">User manual</a><a href="/docs" data-i18n="comm.api">API documentation</a></p>
+      <p id="footer-contact" hidden><span data-i18n="footer.contact">Contact</span>: <a id="footer-contact-link"></a></p>
+    </div>
+  </footer>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 112 112" role="img" aria-label="Toshiba Modbus Monitor">
+  <defs>
+    <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#26364f"/><stop offset="1" stop-color="#101a2a"/></linearGradient>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".45"/></filter>
+  </defs>
+  <g filter="url(#s)">
+    <rect x="5" y="5" width="102" height="102" rx="25" fill="url(#b)" stroke="#40536f" stroke-width="2"/>
+    <path d="M7 57H24M88 57h17" stroke="#26e6ef" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="17" cy="57" r="10" fill="#102b3a" stroke="#26e6ef" stroke-width="3"/><circle cx="95" cy="57" r="10" fill="#102b3a" stroke="#26e6ef" stroke-width="3"/>
+    <path d="M32 23h48v66H32z" fill="#b9c7d1" stroke="#eaf6ff" stroke-width="2"/>
+    <path d="M39 20h34v72H39z" fill="#243342" stroke="#d9edf5" stroke-width="3"/>
+    <rect x="43" y="29" width="26" height="18" rx="2" fill="#07150e" stroke="#8aa0ae" stroke-width="2"/>
+    <path d="M45 40h4l3-8 4 12 4-7h7" fill="none" stroke="#2cf38d" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="65" cy="34" r="3" fill="#47ff9c"/>
+    <g fill="#aebec9"><rect x="44" y="52" width="7" height="7" rx="1"/><rect x="54" y="52" width="7" height="7" rx="1"/><rect x="64" y="52" width="7" height="7" rx="1"/></g>
+    <g stroke="#99acb7" stroke-width="3"><path d="M45 64v24M51 64v24M57 64v24M63 64v24M69 64v24"/></g>
+  </g>
+</svg>

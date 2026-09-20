@@ -1,0 +1,23 @@
+[Unit]
+Description=Toshiba Modbus Monitor (TMM) V1.0 collector
+After=local-fs.target
+
+[Service]
+Type=simple
+User=tmm
+Group=tmm
+SupplementaryGroups=dialout
+WorkingDirectory=/opt/tmm
+ExecStart=/opt/tmm/.venv/bin/python /opt/tmm/tmm_monitor.py --config /etc/tmm/config.json
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/tmm
+ReadWritePaths=-/mnt/tmm-data
+
+[Install]
+WantedBy=multi-user.target
