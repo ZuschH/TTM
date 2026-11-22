@@ -13,7 +13,7 @@
       <h1>CSV Viewer</h1>
       <p class="subtitle" data-i18n="subtitle">Offline analysis of TMM recordings</p>
     </div>
-    <div class="header-actions"><label class="language-label"><span data-i18n="language">Language</span><select id="language"><option value="en">English</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="ja">日本語</option></select></label><button id="open-button" class="primary" data-i18n="open">Open CSV file</button></div>
+    <div class="header-actions"><label class="language-label"><span data-i18n="language">Language</span><select id="language"><option value="en">English</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="ja">日本語</option></select></label><button id="export-button" disabled data-i18n="export">Export normalized CSV</button><button id="open-button" class="primary" data-i18n="open">Open CSV file</button></div>
     <input id="file-input" type="file" accept=".csv,text/csv" hidden>
   </header>
 
@@ -29,6 +29,7 @@
 
     <section id="workspace" hidden>
       <div id="error" class="message error" hidden></div>
+      <div id="import-notice" class="message info" hidden></div>
       <section class="summary-grid">
         <article class="panel stat"><span data-i18n="summary.file">File</span><strong id="summary-file">—</strong></article>
         <article class="panel stat"><span data-i18n="summary.period">Period</span><strong id="summary-period">—</strong></article>
@@ -45,10 +46,6 @@
         <div class="field">
           <label for="terminal-layout" data-i18n="controls.layout">Terminal layout</label>
           <select id="terminal-layout"><option value="auto" data-i18n="controls.layoutAuto">Automatic from device name</option><option value="VF-AS1">VF-AS1</option><option value="VF-AS3J">VF-AS3J</option><option value="VF-S11">VF-S11</option><option value="VF-S15">VF-S15</option></select>
-        </div>
-        <div class="field">
-          <label for="curve-mode" data-i18n="controls.curve">Values between records</label>
-          <select id="curve-mode"><option value="hold" data-i18n="controls.hold">Hold last recorded value</option><option value="linear" data-i18n="controls.linear">Connect recorded values linearly</option></select>
         </div>
         <div class="field metrics-field">
           <div class="measurement-head">
@@ -70,8 +67,9 @@
         </div>
       </section>
 
-      <section class="panel chart-panel">
-        <div class="chart-head">
+      <div id="analysis-sections" class="analysis-sections">
+      <section class="panel chart-panel analysis-category" data-category="history">
+        <div class="chart-head category-head"><button class="category-drag-handle" type="button" aria-label="Reorder category" title="Reorder category">⠿</button>
           <div><p class="eyebrow" data-i18n="chart.eyebrow">History</p><h2 id="chart-title" data-i18n="chart.title">Measurements</h2></div>
           <div class="chart-actions"><p id="chart-note" data-i18n="chart.help">Mouse wheel: zoom · drag: move · pointer: details</p><button id="reset-view" data-i18n="chart.reset">Reset view</button></div>
         </div>
@@ -80,40 +78,43 @@
           <div id="tooltip" class="tooltip" hidden></div>
         </div>
         <div id="legend" class="legend"></div>
+        <div id="markers" class="markers" hidden></div>
       </section>
 
-      <section class="panel events-panel">
-        <div><p class="eyebrow" data-i18n="events.eyebrow">Events</p><h2 data-i18n="events.title">Warnings and trips in the visible period</h2></div>
+      <section class="panel events-panel analysis-category" data-category="events">
+        <div class="category-heading"><button class="category-drag-handle" type="button" aria-label="Reorder category" title="Reorder category">⠿</button><div><p class="eyebrow" data-i18n="events.eyebrow">Events</p><h2 data-i18n="events.title">Warnings and trips in the visible period</h2></div></div>
         <div class="table-scroll"><table><thead><tr><th data-i18n="table.time">Time</th><th data-i18n="table.severity">Severity</th><th data-i18n="table.source">Source</th><th data-i18n="table.code">Code</th><th data-i18n="table.description">Description</th></tr></thead><tbody id="events"></tbody></table></div>
       </section>
 
-      <section class="panel trip-memory-panel">
-        <div><p class="eyebrow" data-i18n="trip.eyebrow">Diagnostic memory</p><h2 data-i18n="trip.title">Trip diagnostics</h2><p class="panel-note" data-i18n="trip.note">These registers contain retained values. The CSV timestamp is the time the memory was read, not the original occurrence time.</p></div>
+      <section class="panel trip-memory-panel analysis-category" data-category="trip-memory">
+        <div class="category-heading"><button class="category-drag-handle" type="button" aria-label="Reorder category" title="Reorder category">⠿</button><div><p class="eyebrow" data-i18n="trip.eyebrow">Diagnostic memory</p><h2 data-i18n="trip.title">Trip diagnostics</h2><p class="panel-note" data-i18n="trip.note">These registers contain retained values. The CSV timestamp is the time the memory was read, not the original occurrence time.</p></div></div>
         <h3 data-i18n="trip.snapshot">Retained values at the latest trip</h3>
         <div class="table-scroll"><table><thead><tr><th data-i18n="table.field">Field</th><th data-i18n="table.value">Value</th><th data-i18n="table.lastRead">Last read</th></tr></thead><tbody id="trip-snapshot"></tbody></table></div>
         <h3 data-i18n="trip.memory">Stored trip codes</h3>
         <div class="table-scroll"><table><thead><tr><th data-i18n="table.slot">Memory slot</th><th data-i18n="table.code">Code</th><th data-i18n="table.description">Description</th><th data-i18n="table.lastRead">Last read</th></tr></thead><tbody id="trip-memory"></tbody></table></div>
       </section>
 
-      <section class="panel device-information-panel">
-        <div><p class="eyebrow" data-i18n="device.eyebrow">Device</p><h2 data-i18n="device.title">Recorded device information</h2><p class="panel-note" data-i18n="device.note">Static identification and firmware values are listed separately because they are not time-series measurements.</p></div>
+      <section class="panel device-information-panel analysis-category" data-category="device-information">
+        <div class="category-heading"><button class="category-drag-handle" type="button" aria-label="Reorder category" title="Reorder category">⠿</button><div><p class="eyebrow" data-i18n="device.eyebrow">Device</p><h2 data-i18n="device.title">Recorded device information</h2><p class="panel-note" data-i18n="device.note">Static identification and firmware values are listed separately because they are not time-series measurements.</p></div></div>
         <div class="table-scroll"><table><thead><tr><th data-i18n="table.field">Field</th><th data-i18n="table.value">Value</th><th data-i18n="table.lastRead">Last read</th></tr></thead><tbody id="device-information"></tbody></table></div>
       </section>
 
-      <section class="panel table-panel">
-        <div><p class="eyebrow" data-i18n="statistics.eyebrow">Overview</p><h2 data-i18n="statistics.title">Selected measurements</h2></div>
+      <section class="panel table-panel analysis-category" data-category="statistics">
+        <div class="category-heading"><button class="category-drag-handle" type="button" aria-label="Reorder category" title="Reorder category">⠿</button><div><p class="eyebrow" data-i18n="statistics.eyebrow">Overview</p><h2 data-i18n="statistics.title">Selected measurements</h2></div></div>
         <div class="table-scroll"><table><thead><tr><th data-i18n="table.measurement">Measurement</th><th data-i18n="table.unit">Unit</th><th data-i18n="table.samples">Samples</th><th data-i18n="table.minimum">Minimum</th><th data-i18n="table.maximum">Maximum</th><th data-i18n="table.average">Average</th><th data-i18n="table.lastValue">Last value</th></tr></thead><tbody id="statistics"></tbody></table></div>
       </section>
+      </div>
     </section>
   </main>
   <footer class="product-footer">
     <img src="tmm-product-mark.svg" alt="">
     <div>
       <strong>Toshiba Modbus Monitor</strong>
-      <p>Version 1.0.0 · <span data-i18n="footer.summary">Offline analysis of TMM CSV exports</span></p>
+      <p>Version 1.1.1 · <span data-i18n="footer.summary">Offline analysis of TMM CSV exports</span></p>
       <p class="footer-links"><a href="/README.md" target="_blank" data-i18n="footer.manual">User manual</a></p>
     </div>
   </footer>
+  <script src="csv-codec.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -48,6 +48,10 @@ const I18N = {
   fr:{subtitle:"Analyse hors ligne des enregistrements TMM",language:"Langue",open:"Ouvrir un fichier CSV","welcome.title":"Ouvrir un export TMM","welcome.text":"Sélectionnez un fichier CSV exporté par Toshiba Modbus Monitor. Le traitement s’effectue uniquement sur ce système hôte.","welcome.sample":"Charger l’exemple inclus","summary.file":"Fichier","summary.period":"Période","summary.samples":"Mesures","summary.series":"Variateurs / mesures","summary.reference":"Référence d’étude","controls.inverter":"Variateur","controls.layout":"Disposition des bornes","controls.layoutAuto":"Automatique selon le nom de l’appareil","controls.curve":"Valeurs entre les enregistrements","controls.hold":"Conserver la dernière valeur enregistrée","controls.linear":"Relier les valeurs enregistrées linéairement","controls.measurements":"Mesures","selection.all":"Toutes","selection.none":"Aucune","selection.analog":"Valeurs analogiques","selection.operating":"État de fonctionnement","selection.terminals":"Bornes","range.from":"Du","range.to":"Au","range.full":"Période complète","chart.eyebrow":"Historique","chart.title":"Mesures","chart.help":"Molette : zoom · glisser : déplacer · pointeur : détails","chart.reset":"Réinitialiser la vue","events.eyebrow":"Événements","events.title":"Avertissements et défauts dans la période visible","trip.eyebrow":"Mémoire de diagnostic","trip.title":"Diagnostic des défauts","trip.note":"Ces registres contiennent des valeurs mémorisées. L’horodatage CSV est celui de la lecture, pas celui de l’événement initial.","trip.snapshot":"Valeurs mémorisées lors du dernier défaut","trip.memory":"Codes défaut mémorisés","device.eyebrow":"Appareil","device.title":"Informations appareil enregistrées","device.note":"Les valeurs d’identification et de firmware sont affichées séparément, car elles ne constituent pas des séries chronologiques.","statistics.eyebrow":"Vue d’ensemble","statistics.title":"Mesures sélectionnées",footer:"TMM CSV Viewer · Outil d’analyse hors ligne","table.time":"Heure","table.severity":"Gravité","table.source":"Source","table.code":"Code","table.description":"Description","table.field":"Champ","table.value":"Valeur","table.lastRead":"Dernière lecture","table.slot":"Emplacement mémoire","table.measurement":"Mesure","table.unit":"Unité","table.samples":"Mesures","table.minimum":"Minimum","table.maximum":"Maximum","table.average":"Moyenne","table.lastValue":"Dernière valeur","group.Events":"Événements","group.Status & terminals":"État et bornes","group.Temperatures":"Températures","group.Speed":"Vitesse","group.Power":"Puissance","group.Torque":"Couple","group.Device information":"Informations appareil","group.Frequency":"Fréquence","group.Voltage":"Tension","group.Load & output":"Charge et sortie","group.Other":"Autres","error.empty":"Le fichier ne contient aucune ligne de mesure.","error.columns":"Export CSV TMM non pris en charge. Colonnes manquantes : {columns}","error.numeric":"Aucune mesure TMM numérique valide trouvée.","summary.skipped":"({count} ignorées)","chart.select":"Sélectionnez au moins une mesure.","legend.digital":"Piste numérique : zone colorée = ACTIVE","legend.unavailable":"Communication indisponible","legend.events":"{count} événement(s)","events.empty":"Aucun avertissement ou défaut dans la période visible.","trip.snapshotEmpty":"Aucun instantané de défaut mémorisé dans ce CSV.","trip.memoryEmpty":"Aucune valeur de mémoire de défaut dans ce CSV.","device.csv":"Variateur CSV","device.slave":"Adresse Modbus","status.trip":"Défaut","status.emergency":"Arrêt d’urgence","status.alarm":"Alarme","status.forward":"Marche avant","status.reverse":"Marche arrière","status.ready":"Prêt / arrêté","status.stopped":"Arrêté / non prêt","status.none":"Aucun bit d’état actif","communication.label":"Communication","communication.unavailable":"indisponible","communication.unknown":"inconnue","tooltip.activeBits":"Bits d’état actifs","trip.latest":"Dernier défaut mémorisé","trip.previous":"Défaut mémorisé précédent","trip.third":"Troisième défaut mémorisé","trip.oldest":"Défaut mémorisé le plus ancien","trip.none":"Aucun défaut mémorisé","trip.unknown":"Code défaut inconnu"},
   ja:{subtitle:"TMM記録のオフライン解析",language:"言語",open:"CSVファイルを開く","welcome.title":"TMMエクスポートを開く","welcome.text":"Toshiba Modbus Monitor から出力したCSVファイルを選択してください。処理はこのホストシステム内でのみ行われます。","welcome.sample":"同梱サンプルを読み込む","summary.file":"ファイル","summary.period":"期間","summary.samples":"測定点","summary.series":"インバーター / 項目","summary.reference":"調査参照名","controls.inverter":"インバーター","controls.layout":"端子配置","controls.layoutAuto":"装置名から自動判定","controls.curve":"記録間の値","controls.hold":"最後の記録値を保持","controls.linear":"記録値を直線で接続","controls.measurements":"測定項目","selection.all":"すべて","selection.none":"なし","selection.analog":"アナログ値","selection.operating":"運転状態","selection.terminals":"端子","range.from":"開始","range.to":"終了","range.full":"全期間","chart.eyebrow":"履歴","chart.title":"測定値","chart.help":"マウスホイール：拡大縮小 · ドラッグ：移動 · ポインター：詳細","chart.reset":"表示をリセット","events.eyebrow":"イベント","events.title":"表示期間内の警告とトリップ","trip.eyebrow":"診断メモリ","trip.title":"トリップ診断","trip.note":"これらのレジスタには保持値が含まれます。CSVの時刻は元の発生時刻ではなく、メモリを読み取った時刻です。","trip.snapshot":"最新トリップ時の保持値","trip.memory":"保存済みトリップコード","device.eyebrow":"装置","device.title":"記録済み装置情報","device.note":"静的な識別値とファームウェア値は時系列測定値ではないため、別に表示されます。","statistics.eyebrow":"概要","statistics.title":"選択した測定値",footer:"TMM CSV Viewer · オフライン解析ツール","table.time":"時刻","table.severity":"重要度","table.source":"ソース","table.code":"コード","table.description":"説明","table.field":"項目","table.value":"値","table.lastRead":"最終読取り","table.slot":"メモリ位置","table.measurement":"測定値","table.unit":"単位","table.samples":"測定点","table.minimum":"最小","table.maximum":"最大","table.average":"平均","table.lastValue":"最終値","group.Events":"イベント","group.Status & terminals":"状態・端子","group.Temperatures":"温度","group.Speed":"速度","group.Power":"電力","group.Torque":"トルク","group.Device information":"装置情報","group.Frequency":"周波数","group.Voltage":"電圧","group.Load & output":"負荷・出力","group.Other":"その他","error.empty":"ファイルに測定行がありません。","error.columns":"対応していないTMM CSVエクスポートです。不足列：{columns}","error.numeric":"有効な数値TMM測定値がありません。","summary.skipped":"（{count}件を除外）","chart.select":"少なくとも1つの測定値を選択してください。","legend.digital":"デジタルトラック：色付き領域 = ON","legend.unavailable":"通信不可","legend.events":"{count} 件のイベント","events.empty":"表示期間に警告またはトリップはありません。","trip.snapshotEmpty":"このCSVには保持されたトリップスナップショットがありません。","trip.memoryEmpty":"このCSVにはトリップメモリ値がありません。","device.csv":"CSVインバーター","device.slave":"Modbusアドレス","status.trip":"トリップ","status.emergency":"非常停止","status.alarm":"アラーム","status.forward":"正転運転","status.reverse":"逆転運転","status.ready":"準備完了 / 停止","status.stopped":"停止 / 未準備","status.none":"有効な状態ビットなし","communication.label":"通信","communication.unavailable":"利用不可","communication.unknown":"不明","tooltip.activeBits":"有効な状態ビット","trip.latest":"最新の保存トリップ","trip.previous":"前回の保存トリップ","trip.third":"3件目の保存トリップ","trip.oldest":"最古の保存トリップ","trip.none":"保存トリップなし","trip.unknown":"不明なトリップコード"}
 };
+Object.assign(I18N.en,{"group.External I/O":"External I/O"});
+Object.assign(I18N.de,{"group.External I/O":"Externe E/A"});
+Object.assign(I18N.fr,{"group.External I/O":"E/S externes"});
+Object.assign(I18N.ja,{"group.External I/O":"外部I/O"});
 Object.assign(I18N.en,{"metric.output_frequency":"Output frequency","metric.frequency_setpoint":"Frequency setpoint","metric.operating_status":"Operating status","metric.output_current":"Output current","metric.dc_input_voltage":"DC-link voltage","metric.output_voltage":"Output voltage","metric.braking_resistor_load":"Braking resistor load","metric.input_terminal_status":"Input terminals","metric.fm_analog_output":"Analog output","metric.inverter_internal_temperature":"Inverter temperature","metric.power_board_temperature":"Power-board temperature","metric.calculated_motor_speed":"Calculated motor speed","metric.machine_speed":"Machine speed","metric.actual_output_current":"Calculated output current","metric.actual_output_voltage":"Calculated output voltage","metric.actual_motor_torque":"Calculated motor torque","metric.mechanical_power":"Calculated mechanical power","metric.trip_code":"Trip code","metric.alarm_information_1":"Alarm information 1","metric.alarm_information_2":"Alarm information 2"});
 Object.assign(I18N.de,{"metric.output_frequency":"Ausgangsfrequenz","metric.frequency_setpoint":"Frequenzvorgabe","metric.operating_status":"Betriebsstatus","metric.output_current":"Ausgangsstrom","metric.dc_input_voltage":"Zwischenkreisspannung","metric.output_voltage":"Ausgangsspannung","metric.braking_resistor_load":"Bremswiderstand-Auslastung","metric.input_terminal_status":"Eingangsklemmen","metric.fm_analog_output":"Analogausgang","metric.inverter_internal_temperature":"Umrichtertemperatur","metric.power_board_temperature":"Leistungsteiltemperatur","metric.calculated_motor_speed":"Berechnete Motordrehzahl","metric.machine_speed":"Maschinendrehzahl","metric.actual_output_current":"Berechneter Ausgangsstrom","metric.actual_output_voltage":"Berechnete Ausgangsspannung","metric.actual_motor_torque":"Berechnetes Motordrehmoment","metric.mechanical_power":"Berechnete mechanische Leistung","metric.trip_code":"Trip-Code","metric.alarm_information_1":"Alarminformation 1","metric.alarm_information_2":"Alarminformation 2"});
 Object.assign(I18N.fr,{"metric.output_frequency":"Fréquence de sortie","metric.frequency_setpoint":"Consigne de fréquence","metric.operating_status":"État de fonctionnement","metric.output_current":"Courant de sortie","metric.dc_input_voltage":"Tension du bus continu","metric.output_voltage":"Tension de sortie","metric.braking_resistor_load":"Charge résistance de freinage","metric.input_terminal_status":"Bornes d’entrée","metric.fm_analog_output":"Sortie analogique","metric.inverter_internal_temperature":"Température variateur","metric.power_board_temperature":"Température carte de puissance","metric.calculated_motor_speed":"Vitesse moteur calculée","metric.machine_speed":"Vitesse machine","metric.actual_output_current":"Courant de sortie calculé","metric.actual_output_voltage":"Tension de sortie calculée","metric.actual_motor_torque":"Couple moteur calculé","metric.mechanical_power":"Puissance mécanique calculée","metric.trip_code":"Code défaut","metric.alarm_information_1":"Information alarme 1","metric.alarm_information_2":"Information alarme 2"});
@@ -56,6 +60,14 @@ Object.assign(I18N.en,{"footer.summary":"Offline analysis of TMM CSV exports","f
 Object.assign(I18N.de,{"footer.summary":"Offline-Analyse von TMM-CSV-Exporten","footer.manual":"Benutzerhandbuch"});
 Object.assign(I18N.fr,{"footer.summary":"Analyse hors ligne des exports CSV TMM","footer.manual":"Manuel utilisateur"});
 Object.assign(I18N.ja,{"footer.summary":"TMM CSVエクスポートのオフライン解析","footer.manual":"ユーザーマニュアル"});
+Object.assign(I18N.en,{"controls.spline":"Smooth spline between recorded values","chart.help":"Mouse wheel: zoom · drag: move · click: marker · pointer: details","markers.title":"Analysis markers","markers.delete":"Delete marker"});
+Object.assign(I18N.de,{"controls.spline":"Glatter Spline zwischen Messpunkten","chart.help":"Mausrad: Zoom · Ziehen: Verschieben · Klick: Marker · Zeiger: Details","markers.title":"Analysemarker","markers.delete":"Marker löschen"});
+Object.assign(I18N.fr,{"controls.spline":"Spline lissée entre les mesures","chart.help":"Molette : zoom · glisser : déplacer · clic : repère · pointeur : détails","markers.title":"Repères d’analyse","markers.delete":"Supprimer le repère"});
+Object.assign(I18N.ja,{"controls.spline":"記録値間を滑らかなスプラインで接続","chart.help":"ホイール: ズーム · ドラッグ: 移動 · クリック: マーカー · ポインター: 詳細","markers.title":"解析マーカー","markers.delete":"マーカーを削除"});
+Object.assign(I18N.en,{export:"Export normalized CSV","import.notice":"Imported {columns} unknown column(s) and {metrics} unfamiliar measurement channel(s). They are retained unchanged for export.","metric.unknown":"Unrecognized measurement"});
+Object.assign(I18N.de,{export:"Normalisierte CSV exportieren","import.notice":"{columns} unbekannte Spalte(n) und {metrics} unbekannte Messkanal/-kanäle wurden importiert. Sie bleiben beim Export unverändert erhalten.","metric.unknown":"Unbekannter Messkanal"});
+Object.assign(I18N.fr,{export:"Exporter le CSV normalisé","import.notice":"{columns} colonne(s) inconnue(s) et {metrics} canal/canaux de mesure inconnu(s) ont été importés. Ils sont conservés sans modification lors de l’export.","metric.unknown":"Mesure non reconnue"});
+Object.assign(I18N.ja,{export:"正規化 CSV をエクスポート","import.notice":"不明な列 {columns} 件と未認識の測定チャンネル {metrics} 件をインポートしました。エクスポート時も変更せず保持します。","metric.unknown":"未認識の測定チャンネル"});
 let language = localStorage.getItem("tmm-csv-viewer-language") || "en";
 const t = (key, values={}) => (I18N[language]?.[key] || I18N.en[key] || key).replace(/\{(\w+)\}/g, (_, name) => values[name] ?? "");
 const locale = () => ({en:"en-US",de:"de-DE",fr:"fr-FR",ja:"ja-JP"})[language] || "en-US";
@@ -63,50 +75,36 @@ const numberText = value => new Intl.NumberFormat(locale(),{maximumFractionDigit
 const dateText = value => new Intl.DateTimeFormat(locale(),{dateStyle:"medium",timeStyle:"medium"}).format(value);
 const fmt = {format:numberText};
 const dateFmt = {format:dateText};
-function applyLanguage(){document.documentElement.lang=language;document.querySelectorAll("[data-i18n]").forEach(element=>element.textContent=t(element.dataset.i18n));$("#language").value=language;if(state.rows.length){const selected=new Set(state.selected);fillMetrics();if(selected.size){state.selected.clear();for(const input of document.querySelectorAll("#metrics input[type=checkbox]")){input.checked=selected.has(input.value);if(input.checked)state.selected.add(input.value);}}render();}}
-const state = {rows:[], byInverter:new Map(), inverter:"", selected:new Set(), fullStart:0, fullEnd:0, start:0, end:0, visible:[], hoverX:null, drag:null, communicationCache:null, reference:""};
+function applyLanguage(){document.documentElement.lang=language;document.querySelectorAll("[data-i18n]").forEach(element=>element.textContent=t(element.dataset.i18n));$("#language").value=language;if(state.rows.length){fillMetrics();render();}}
+const state = {rows:[], byInverter:new Map(), sources:new Set(), metricLabels:new Map(), inverter:"", selected:new Set(), styles:new Map(), colors:new Map(), fullStart:0, fullEnd:0, start:0, end:0, visible:[], hoverX:null, drag:null, markers:[], communicationCache:null, reference:"", csv:null, unknownColumns:[], unknownMetrics:new Set()};
 const $ = s => document.querySelector(s);
 
-function parseCsv(text){
-  const records=[]; let row=[], field="", quoted=false;
-  for(let i=0;i<text.length;i++){
-    const c=text[i];
-    if(quoted){ if(c==='"' && text[i+1]==='"'){field+='"';i++;} else if(c==='"'){quoted=false;} else field+=c; }
-    else if(c==='"') quoted=true;
-    else if(c===','){row.push(field);field="";}
-    else if(c==='\n'){row.push(field);records.push(row);row=[];field="";}
-    else if(c!=='\r') field+=c;
-  }
-  if(field.length||row.length){row.push(field);records.push(row);}
-  return records;
-}
-
-function metricLabel(key){return t(`metric.${key}`)===`metric.${key}`?(LABELS[key]||key.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase())):t(`metric.${key}`);}
+function addonFallbackLabel(key){const parts=key.split(".");const channel=parts.at(-1)?.replaceAll("_"," ").replace(/\b\w/g,c=>c.toUpperCase());return `${parts[1]||"External I/O"} · ${channel||key}`;}
+function knownMetric(key){return Boolean(LABELS[key])||key.startsWith("addon.")||key.startsWith("system.")||key.startsWith("condition.");}
+function metricLabel(key,inverter=state.inverter){const configured=state.metricLabels.get(`${inverter}\u001f${key}`);if(configured)return configured;const translated=t(`metric.${key}`);if(translated!==`metric.${key}`)return translated;if(LABELS[key])return LABELS[key];if(key.startsWith("addon."))return addonFallbackLabel(key);return `${t("metric.unknown")} · ${key}`;}
+function isDigital(key,rows=[]){return DIGITAL.has(key)||rows[0]?.unit==="on/off";}
 function localInput(ms){const d=new Date(ms-datetimeOffset(ms));return d.toISOString().slice(0,19);}
 function datetimeOffset(ms){return new Date(ms).getTimezoneOffset()*60000;}
-function numeric(v){const n=Number(v);return Number.isFinite(n)?n:null;}
+function numeric(v){return TmmCsvCodec.number(v);}
 function showError(message){$("#error").textContent=message;$("#error").hidden=false;}
 
 async function openFile(file){
-  $("#error").hidden=true;
+  $("#error").hidden=true;$("#import-notice").hidden=true;
   try{
-    const data=parseCsv(await file.text());
-    if(data.length<2) throw new Error(t("error.empty"));
-    const header=data.shift().map((v,i)=>i===0?v.replace(/^\uFEFF/,"").trim():v.trim());
-    const missing=REQUIRED.filter(c=>!header.includes(c));
+    const document=TmmCsvCodec.parse(await file.text()),header=document.header,data=document.records;
+    if(data.length<1) throw new Error(t("error.empty"));
+    const imported=TmmCsvCodec.tmmRows(document,REQUIRED),missing=imported.missing;
     if(missing.length) throw new Error(t("error.columns",{columns:missing.join(", ")}));
     const at=Object.fromEntries(header.map((name,index)=>[name,index]));
+    state.csv=document;state.unknownColumns=header.filter(name=>!REQUIRED.includes(name)&&name!=="metric_label"&&name!=="investigation_reference");
     state.reference = at.investigation_reference === undefined ? "" : (data.find(fields=>fields[at.investigation_reference]?.trim())?.[at.investigation_reference] || "").trim();
-    const rows=[]; let rejected=0;
-    for(const fields of data){
-      const time=Date.parse(fields[at.observed_at]); const value=numeric(fields[at.value]);
-      if(!Number.isFinite(time)||value===null||!fields[at.inverter]||!fields[at.metric]){rejected++;continue;}
-      rows.push({time,inverter:fields[at.inverter],slave:fields[at.slave_id],metric:fields[at.metric],address:fields[at.register_address],raw:numeric(fields[at.raw_value]),value,unit:fields[at.unit]||""});
-    }
+    state.sources=imported.sources;
+    const {rows,rejected}=imported;
     if(!rows.length) throw new Error(t("error.numeric"));
-    rows.sort((a,b)=>a.time-b.time); state.rows=rows; state.fullStart=rows[0].time;state.fullEnd=rows.at(-1).time;state.start=state.fullStart;state.end=state.fullEnd;
-    state.byInverter=new Map();
-    for(const r of rows){if(!state.byInverter.has(r.inverter))state.byInverter.set(r.inverter,new Map());const metrics=state.byInverter.get(r.inverter);if(!metrics.has(r.metric))metrics.set(r.metric,[]);metrics.get(r.metric).push(r);}
+    rows.sort((a,b)=>a.time-b.time); state.rows=rows; state.markers=[];state.selected=new Set();state.styles=new Map();state.colors=new Map(); state.fullStart=rows[0].time;state.fullEnd=rows.at(-1).time;state.start=state.fullStart;state.end=state.fullEnd;
+    state.byInverter=new Map();state.metricLabels=new Map();
+    state.unknownMetrics=new Set();
+    for(const r of rows){if(!state.byInverter.has(r.inverter))state.byInverter.set(r.inverter,new Map());const metrics=state.byInverter.get(r.inverter);if(!metrics.has(r.metric))metrics.set(r.metric,[]);metrics.get(r.metric).push(r);if(r.metricLabel)state.metricLabels.set(`${r.inverter}\u001f${r.metric}`,r.metricLabel);if(!knownMetric(r.metric)&&!r.metricLabel)state.unknownMetrics.add(r.metric);}
     $("#summary-file").textContent=file.name;$("#summary-file").title=file.name;
     $("#summary-period").textContent=`${dateText(state.start)} – ${dateText(state.end)}`;
     $("#summary-samples").textContent=numberText(rows.length)+(rejected?` ${t("summary.skipped",{count:numberText(rejected)})}`:"");
@@ -114,14 +112,17 @@ async function openFile(file){
     $("#summary-series").textContent=`${state.byInverter.size} / ${metricCount}`;
     $("#summary-reference").textContent=state.reference||"—"; $("#summary-reference").title=state.reference;
     $("#start-time").value=localInput(state.start);$("#end-time").value=localInput(state.end);
+    const notice=$("#import-notice");if(state.unknownColumns.length||state.unknownMetrics.size){notice.textContent=t("import.notice",{columns:numberText(state.unknownColumns.length),metrics:numberText(state.unknownMetrics.size)});notice.hidden=false;}
+    $("#export-button").disabled=false;
     fillInverters();$("#welcome").hidden=true;$("#workspace").hidden=false;render();
   }catch(error){$("#workspace").hidden=false;showError(error.message||String(error));}
 }
 
-function fillInverters(){const select=$("#inverter");select.innerHTML="";for(const name of state.byInverter.keys()){select.add(new Option(name,name));}state.inverter=select.value;fillMetrics();}
+function fillInverters(){const select=$("#inverter");select.innerHTML="";for(const name of new Set([...state.sources,...state.byInverter.keys()])){select.add(new Option(name,name));}state.inverter=select.value;fillMetrics();}
 function metricGroup(key,unit){
+  if(key.startsWith("addon."))return t("group.External I/O");
   if(EVENT_KEYS.has(key))return t("group.Events");
-  if(DIGITAL.has(key))return t("group.Status & terminals");
+  if(isDigital(key))return t("group.Status & terminals");
   if(key.includes("temperature"))return t("group.Temperatures");
   if(key.includes("speed"))return t("group.Speed");
   if(key.includes("power"))return t("group.Power");
@@ -132,24 +133,21 @@ function metricGroup(key,unit){
   if(key.includes("current")||key.includes("load")||key.includes("output"))return t("group.Load & output");
   return t("group.Other");
 }
+const selectionKey=(source,metric)=>`${source}\u001f${metric}`;
+const splitSelectionKey=value=>value.split("\u001f");
+const sourceLabel=source=>source==="communication"?t("communication.label"):source;
+function selectedLabel(source,metric){const sources=new Set([...state.selected].map(value=>splitSelectionKey(value)[0]));const label=metricLabel(metric,source);return sources.size>1?`${sourceLabel(source)} · ${label}`:label;}
 function fillMetrics(){
-  const box=$("#metrics");box.innerHTML="";state.selected.clear();const metrics=state.byInverter.get(state.inverter)||new Map(),groups=new Map();
-  for(const [key,rows] of metrics){const plottable=!EVENT_KEYS.has(key)&&key!=="communication_status"&&!DEVICE_INFO_KEYS.has(key)&&!RETAINED_TRIP_KEYS.has(key)&&(rows[0].unit!=="raw"||DIGITAL.has(key));if(!plottable)continue;const group=metricGroup(key,rows[0].unit);if(!groups.has(group))groups.set(group,[]);groups.get(group).push([key,rows]);}
-  let auto=0;
-  for(const [group,items] of groups){const section=document.createElement("div");section.className="metric-group";const title=document.createElement("span");title.className="metric-group-title";title.textContent=group;section.append(title);
-    for(const [key,rows] of items){const label=document.createElement("label");label.className="metric";const input=document.createElement("input");input.type="checkbox";input.value=key;
-      if(auto<3){input.checked=true;state.selected.add(key);auto++;}
-      input.addEventListener("change",()=>{input.checked?state.selected.add(key):state.selected.delete(key);render();});const unit=document.createElement("small");unit.textContent=`(${rows[0].unit})`;label.append(input,document.createTextNode(metricLabel(key)),unit);section.append(label);}
-    box.append(section);}
+  const box=$("#metrics"),metrics=state.byInverter.get(state.inverter)||new Map();box.innerHTML="";let auto=0,index=0;
+  for(const [key,rows] of metrics){const plottable=!EVENT_KEYS.has(key)&&key!=="communication_status"&&!DEVICE_INFO_KEYS.has(key)&&!RETAINED_TRIP_KEYS.has(key)&&(rows[0].unit!=="raw"||isDigital(key,rows));if(!plottable)continue;const id=selectionKey(state.inverter,key),digital=isDigital(key,rows),card=document.createElement("article"),toggle=document.createElement("label"),input=document.createElement("input"),text=document.createElement("span"),name=document.createElement("strong"),api=document.createElement("small");card.className="history-channel-card";input.type="checkbox";input.value=id;input.checked=state.selected.size?state.selected.has(id):auto<3;if(input.checked)state.selected.add(id);auto++;name.textContent=metricLabel(key,state.inverter);api.textContent=`${state.inverter} · ${key}`;text.append(name,api);toggle.append(input,text);card.append(toggle);input.addEventListener("change",()=>{input.checked?state.selected.add(id):state.selected.delete(id);render();});if(!digital){const actions=document.createElement("div");actions.className="history-curve-buttons";const color=document.createElement("input");color.type="color";color.className="history-colour-picker";color.value=state.colors.get(id)||COLORS[index%COLORS.length];state.colors.set(id,color.value);color.addEventListener("input",()=>{state.colors.set(id,color.value);render();});actions.append(color);for(const [style,icon] of [["step","⌜"],["linear","╱"],["spline","〰"]]){const button=document.createElement("button");button.type="button";button.className="curve-style-button";button.textContent=icon;button.setAttribute("aria-pressed",String((state.styles.get(id)||"linear")===style));button.addEventListener("click",()=>{state.styles.set(id,style);fillMetrics();render();});actions.append(button);}card.append(actions);}box.append(card);index++;}
 }
 
 function applySelectionPreset(mode){
-  state.selected.clear();
   for(const input of document.querySelectorAll("#metrics input[type=checkbox]")){
-    const key=input.value;
-    const checked=mode==="all"||(mode==="analog"&&!DIGITAL.has(key))||(mode==="operating"&&key==="operating_status")||(mode==="terminals"&&key==="input_terminal_status");
+    const [source,key]=splitSelectionKey(input.value);
+    const rows=(state.byInverter.get(state.inverter)||new Map()).get(key)||[];const checked=mode==="all"||(mode==="analog"&&!isDigital(key,rows))||(mode==="operating"&&key==="operating_status")||(mode==="terminals"&&isDigital(key,rows));
     input.checked=checked;
-    if(checked)state.selected.add(key);
+    if(checked)state.selected.add(selectionKey(source,key));else state.selected.delete(selectionKey(source,key));
   }
   render();
 }
@@ -176,11 +174,11 @@ function terminalLayout(name){const chosen=$("#terminal-layout").value,upper=(ch
 function statusSummary(raw){if(raw&(1<<1))return t("status.trip");if(raw&(1<<12))return t("status.emergency");if(raw&(1<<2))return t("status.alarm");if(raw&(1<<10))return raw&(1<<9)?t("status.reverse"):t("status.forward");if(raw&(1<<14))return t("status.ready");return t("status.stopped");}
 function statusDetails(raw){const active=Object.entries(STATUS_BITS).filter(([bit])=>raw&(1<<Number(bit))).map(([,label])=>label);return active.length?active.join(", "):t("status.none");}
 function selectedSeries(){
-  const metrics=state.byInverter.get(state.inverter)||new Map(),series=[],holdAnalog=$("#curve-mode").value==="hold";let color=0;
-  for(const key of state.selected){const source=metrics.get(key)||[],sourceCount=Math.max(0,lowerBound(source,state.end+0.001)-lowerBound(source,state.start));
-    if(key==="input_terminal_status"){for(const [label,bit] of Object.entries(terminalLayout(state.inverter))){const rows=rowsInView(source,true).map(r=>({...r,value:(Math.trunc(r.raw??r.value)&(1<<bit))?1:0,unit:"on/off"}));if(rows.length)series.push({key:`terminal_${label}`,label,color:COLORS[color++%COLORS.length],rows,digital:true,stepped:true,sourceCount});}}
-    else if(STATUS_WORDS.has(key)){const statusRows=rowsInView(source,true);for(const [bit,label] of STATUS_LANES){const rows=statusRows.map(r=>({...r,value:(Math.trunc(r.raw??r.value)&(1<<bit))?1:0,unit:"on/off"}));if(rows.length)series.push({key:`${key}_${bit}`,statusKey:key,statusRows,label:`Operating · ${label}`,color:COLORS[color++%COLORS.length],rows,digital:true,stepped:true,sourceCount});}}
-    else{const digital=DIGITAL.has(key),stepped=digital||holdAnalog,rows=rowsInView(source,stepped);if(rows.length)series.push({key,label:metricLabel(key),color:COLORS[color++%COLORS.length],rows,digital,stepped,sourceCount});}
+  const series=[];let color=0;
+  for(const id of state.selected){const [sourceName,key]=splitSelectionKey(id),source=state.byInverter.get(sourceName)?.get(key)||[],sourceCount=Math.max(0,lowerBound(source,state.end+0.001)-lowerBound(source,state.start));
+    if(key==="input_terminal_status"){for(const [label,bit] of Object.entries(terminalLayout(sourceName))){const rows=rowsInView(source,true).map(r=>({...r,value:(Math.trunc(r.raw??r.value)&(1<<bit))?1:0,unit:"on/off"}));if(rows.length)series.push({key:`${id}:terminal_${label}`,label:`${selectedLabel(sourceName,key)} · ${label}`,color:COLORS[color++%COLORS.length],rows,digital:true,stepped:true,sourceCount});}}
+    else if(STATUS_WORDS.has(key)){const statusRows=rowsInView(source,true);for(const [bit,label] of STATUS_LANES){const rows=statusRows.map(r=>({...r,value:(Math.trunc(r.raw??r.value)&(1<<bit))?1:0,unit:"on/off"}));if(rows.length)series.push({key:`${id}:${bit}`,statusKey:id,statusRows,label:`${selectedLabel(sourceName,key)} · ${label}`,color:COLORS[color++%COLORS.length],rows,digital:true,stepped:true,sourceCount});}}
+    else{const digital=isDigital(key,source),style=state.styles.get(id)||"linear",stepped=digital||style==="step",rows=rowsInView(source,stepped);if(rows.length)series.push({key:id,label:selectedLabel(sourceName,key),color:state.colors.get(id)||COLORS[color++%COLORS.length],rows,digital,stepped,style,sourceCount});}
   }
   return series;
 }
@@ -191,7 +189,7 @@ function downsample(rows,max){
   out.push(rows.at(-1));return out;
 }
 
-function render(){state.visible=selectedSeries();drawChart();drawLegend();drawEvents();drawTripSnapshot();drawTripMemory();drawDeviceInformation();drawStatistics();}
+function render(){state.visible=selectedSeries();drawChart();drawLegend();drawMarkers();drawEvents();drawTripSnapshot();drawTripMemory();drawDeviceInformation();drawStatistics();}
 function extent(values){let min=Infinity,max=-Infinity;for(const value of values){if(value<min)min=value;if(value>max)max=value;}return {min,max};}
 function visibleEvents(){
   const metrics=state.byInverter.get(state.inverter)||new Map(),events=[];
@@ -208,6 +206,17 @@ function availableParts(start,end){
   return parts;
 }
 function drawCommunicationBackground(c,pad,pw,ph){const rows=communicationRows();for(let i=0;i<rows.length-1;i++){const row=rows[i],next=rows[i+1];if(row.value>1)continue;const x1=pad.l+(row.time-state.start)/Math.max(1,state.end-state.start)*pw,x2=pad.l+(next.time-state.start)/Math.max(1,state.end-state.start)*pw;c.save();c.globalAlpha=row.value===0?.13:.055;c.fillStyle=row.value===0?"#ff716c":"#f0c95d";c.fillRect(x1,pad.t,Math.max(1,x2-x1),ph);c.restore();if(row.value===0&&x2-x1>125){c.fillStyle="#ff9792";c.font="bold 11px Segoe UI";c.fillText(t("legend.unavailable").toUpperCase(),x1+8,pad.t+15);c.font="12px Segoe UI";}}}
+function drawAnalogSeries(c,rows,project,style){
+  if(rows.length<2)return;
+  const points=rows.map(row=>({row,point:project(row.value,row.time)}));
+  if(style==="spline"&&points.length>2){
+    const slopes=points.slice(1).map((item,index)=>(item.point[1]-points[index].point[1])/(item.point[0]-points[index].point[0]||1));
+    const tangents=points.map((_,index)=>{if(index===0)return slopes[0];if(index===points.length-1)return slopes.at(-1);const left=slopes[index-1],right=slopes[index];if(left*right<=0)return 0;let tangent=(left+right)/2,limit=Math.hypot(tangent/left,tangent/right);return limit>3?tangent*3/limit:tangent;});
+    for(let index=0;index<points.length-1;index++){const first=points[index],next=points[index+1];if(!availableParts(first.row.time,next.row.time).some(([a,b])=>a===first.row.time&&b===next.row.time))continue;const [x0,y0]=first.point,[x1,y1]=next.point,dx=(x1-x0)/3;c.beginPath();c.moveTo(x0,y0);c.bezierCurveTo(x0+dx,y0+tangents[index]*dx,x1-dx,y1-tangents[index+1]*dx,x1,y1);c.stroke();}
+    return;
+  }
+  for(let index=0;index<points.length-1;index++){const first=points[index],next=points[index+1],duration=Math.max(1,next.row.time-first.row.time);for(const [a,b] of availableParts(first.row.time,next.row.time)){const ratioA=(a-first.row.time)/duration,ratioB=(b-first.row.time)/duration,valueA=style==="hold"?first.row.value:first.row.value+(next.row.value-first.row.value)*ratioA,valueB=style==="hold"?first.row.value:first.row.value+(next.row.value-first.row.value)*ratioB,[x1,y1]=project(valueA,a),[x2,y2]=project(valueB,b);c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}if(style==="hold"&&first.row.value!==next.row.value&&communicationAt(next.row.time)!=="unreachable"){const [x,y1]=project(first.row.value,next.row.time),[,y2]=project(next.row.value,next.row.time);c.beginPath();c.moveTo(x,y1);c.lineTo(x,y2);c.stroke();}}
+}
 function drawChart(){
   const canvas=$("#chart"),groups=new Map();for(const s of state.visible){const key=s.digital?"Digital status":(s.rows[0]?.unit||"Value");if(!groups.has(key))groups.set(key,[]);groups.get(key).push(s);}
   const groupDefinitions=[...groups].map(([unit,series])=>({unit,series,weight:unit==="Digital status"?Math.max(150,series.length*38):220})),desiredHeight=Math.min(900,Math.max(360,70+groupDefinitions.reduce((sum,group)=>sum+group.weight,0)));canvas.style.height=`${desiredHeight}px`;
@@ -223,17 +232,19 @@ function drawChart(){
     }else{
       const values=seriesList.flatMap(s=>s.rows.map(r=>r.value));let {min,max}=extent(values);if(min===max){min-=1;max+=1;}else{const margin=(max-min)*.08;min-=margin;max+=margin;}c.fillStyle=groupIndex%2?"#0e1715":"#0b1312";c.fillRect(pad.l,top,pw,bottom-top);c.strokeStyle="#263532";c.lineWidth=1;
       for(let i=0;i<=2;i++){const y=top+(bottom-top)*i/2;c.beginPath();c.moveTo(pad.l,y);c.lineTo(w-pad.r,y);c.stroke();const value=max-(max-min)*i/2;c.fillStyle="#91a19c";c.fillText(numberText(value),8,y+4);}c.fillStyle="#79e6bc";c.fillText(unit,8,top+13);
-      for(const series of seriesList){const rows=downsample(series.rows,Math.max(1000,Math.floor(pw*2)));c.strokeStyle=series.color;c.lineWidth=2;for(let i=0;i<rows.length-1;i++){const first=rows[i],next=rows[i+1],duration=Math.max(1,next.time-first.time);for(const [a,b] of availableParts(first.time,next.time)){const ratioA=(a-first.time)/duration,ratioB=(b-first.time)/duration,valueA=series.stepped?first.value:first.value+(next.value-first.value)*ratioA,valueB=series.stepped?first.value:first.value+(next.value-first.value)*ratioB,x1=pad.l+(a-state.start)/Math.max(1,state.end-state.start)*pw,x2=pad.l+(b-state.start)/Math.max(1,state.end-state.start)*pw,y1=top+(max-valueA)/(max-min)*(bottom-top),y2=top+(max-valueB)/(max-min)*(bottom-top);c.beginPath();c.moveTo(x1,y1);c.lineTo(x2,y2);c.stroke();}if(series.stepped&&first.value!==next.value&&communicationAt(next.time)!=="unreachable"){const x=pad.l+(next.time-state.start)/Math.max(1,state.end-state.start)*pw,y1=top+(max-first.value)/(max-min)*(bottom-top),y2=top+(max-next.value)/(max-min)*(bottom-top);c.beginPath();c.moveTo(x,y1);c.lineTo(x,y2);c.stroke();}}}
+      for(const series of seriesList){const rows=downsample(series.rows,Math.max(1000,Math.floor(pw*2)));c.strokeStyle=series.color;c.lineWidth=2;drawAnalogSeries(c,rows,(value,time)=>[pad.l+(time-state.start)/Math.max(1,state.end-state.start)*pw,top+(max-value)/(max-min)*(bottom-top)],series.stepped?"hold":series.style);}
     }
     groupIndex++;
   }
   drawCommunicationBackground(c,pad,pw,ph);
   for(let i=0;i<=6;i++){const x=pad.l+pw*i/6;c.strokeStyle="#263532";c.beginPath();c.moveTo(x,pad.t);c.lineTo(x,h-pad.b);c.stroke();const t=state.start+(state.end-state.start)*i/6;c.fillStyle="#91a19c";c.fillText(new Date(t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"}),x-28,h-16);}
   for(const event of visibleEvents()){const x=pad.l+(event.time-state.start)/Math.max(1,state.end-state.start)*pw;c.strokeStyle=event.severity==="trip"||event.severity==="unreachable"?"#ff716c":event.severity==="recovery"?"#79e6bc":"#f0c95d";c.lineWidth=2;c.beginPath();c.moveTo(x,pad.t);c.lineTo(x,h-pad.b);c.stroke();}
+  c.save();c.setLineDash([5,4]);c.strokeStyle="#f0c95d";c.lineWidth=1.25;for(const marker of state.markers){if(marker.time<state.start||marker.time>state.end)continue;const x=pad.l+(marker.time-state.start)/Math.max(1,state.end-state.start)*pw;c.beginPath();c.moveTo(x,pad.t);c.lineTo(x,h-pad.b);c.stroke();c.fillStyle="#f0c95d";c.beginPath();c.arc(x,pad.t+4,3,0,Math.PI*2);c.fill();}c.restore();
   if(state.hoverX!==null){c.strokeStyle="#d9e8e2";c.lineWidth=1;c.beginPath();c.moveTo(state.hoverX,pad.t);c.lineTo(state.hoverX,h-pad.b);c.stroke();}
   canvas._plot={pad,pw,ph,w,h};
 }
 function drawLegend(){const events=visibleEvents(),analog=state.visible.filter(s=>!s.digital),hasDigital=state.visible.some(s=>s.digital),hasOutage=communicationRows().some(r=>r.value===0);$("#legend").innerHTML=analog.map(s=>`<span><i class="swatch" style="background:${s.color}"></i>${s.label} (${s.rows[0]?.unit||""})</span>`).join("")+(hasDigital?`<span><i class="swatch" style="background:#79e6bc;height:10px"></i>${t("legend.digital")}</span>`:"")+(hasOutage?`<span><i class="swatch" style="background:#ff716c;height:10px;opacity:.45"></i>${t("legend.unavailable")}</span>`:"")+(events.length?`<span><i class="swatch event-swatch" style="background:#f0c95d"></i>${t("legend.events",{count:numberText(events.length)})}</span>`:"");}
+function drawMarkers(){const box=$("#markers");box.replaceChildren();box.hidden=!state.markers.length;box.setAttribute("aria-label",t("markers.title"));for(const marker of state.markers){const card=document.createElement("article"),head=document.createElement("div"),title=document.createElement("strong"),remove=document.createElement("button"),table=document.createElement("table"),body=document.createElement("tbody");card.className="marker";head.className="marker-head";title.textContent=dateText(marker.time);remove.className="marker-delete";remove.type="button";remove.textContent="✕";remove.title=t("markers.delete");remove.setAttribute("aria-label",remove.title);remove.addEventListener("click",()=>{state.markers=state.markers.filter(item=>item.id!==marker.id);drawMarkers();drawChart();});head.append(title,remove);for(const series of state.visible){const row=document.createElement("tr"),name=document.createElement("th"),value=document.createElement("td"),current=seriesValueAt(series,marker.time);name.textContent=series.label;value.textContent=current===null?"—":`${numberText(current)}${series.rows[0]?.unit?` ${series.rows[0].unit}`:""}`;row.append(name,value);body.append(row);}table.append(body);card.append(head,table);box.append(card);}}
 function drawEvents(){const body=$("#events"),events=visibleEvents();body.innerHTML="";if(!events.length){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=5;td.className="empty-row";td.textContent=t("events.empty");tr.append(td);body.append(tr);return;}for(const event of events){const tr=document.createElement("tr"),values=[dateText(event.time),event.severity,metricLabel(event.key),event.code,event.description];values.forEach((value,index)=>{const td=document.createElement("td");if(index===1){const badge=document.createElement("span");badge.className=`severity ${event.severity}`;badge.textContent=value;td.append(badge);}else td.textContent=value;tr.append(td);});body.append(tr);}}
 function drawTripSnapshot(){const body=$("#trip-snapshot"),metrics=state.byInverter.get(state.inverter)||new Map();body.innerHTML="";let count=0;for(const key of RETAINED_TRIP_KEYS){const rows=metrics.get(key)||[],index=lowerBound(rows,state.end+0.001),row=index?rows[index-1]:null;if(!row)continue;count++;const raw=Math.trunc(row.raw??row.value);let value;if(key==="trip_operating_status"){const hex="0x"+raw.toString(16).toUpperCase().padStart(4,"0");value=statusSummary(raw)+" ("+hex+") · "+statusDetails(raw);}else value=fmt.format(row.value)+(row.unit?" "+row.unit:"");const tr=document.createElement("tr");for(const item of [metricLabel(key),value,dateFmt.format(row.time)]){const td=document.createElement("td");td.textContent=item;tr.append(td);}body.append(tr);}if(!count){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=3;td.className="empty-row";td.textContent="No retained trip snapshot is present in this CSV.";tr.append(td);body.append(tr);}}
 function drawTripMemory(){const body=$("#trip-memory"),metrics=state.byInverter.get(state.inverter)||new Map(),slots=[["past_trip_1","Latest stored trip"],["past_trip_2","Previous stored trip"],["past_trip_3","Third stored trip"],["past_trip_4","Oldest stored trip"]];body.innerHTML="";let count=0;for(const [key,label] of slots){const rows=metrics.get(key)||[],index=lowerBound(rows,state.end+0.001),row=index?rows[index-1]:null;if(!row)continue;count++;const raw=Math.trunc(row.raw??row.value),known=raw?(TRIPS[raw]||[`0x${raw.toString(16).toUpperCase().padStart(4,"0")}`,"Unknown trip code"]):["—","No stored trip"],tr=document.createElement("tr");for(const value of [label,known[0],known[1],dateFmt.format(row.time)]){const td=document.createElement("td");td.textContent=value;tr.append(td);}body.append(tr);}if(!count){const tr=document.createElement("tr"),td=document.createElement("td");td.colSpan=4;td.className="empty-row";td.textContent="No retained trip-memory values are present in this CSV.";tr.append(td);body.append(tr);}}
@@ -244,13 +255,36 @@ function tooltipSeriesLine(series,time,communication){return communication==="un
 function tooltipMeasurementLines(time,communication){const lines=[],seenStatus=new Set();for(const series of state.visible){if(!series.statusKey){lines.push(tooltipSeriesLine(series,time,communication));continue;}if(seenStatus.has(series.statusKey))continue;seenStatus.add(series.statusKey);const label=series.statusKey==="trip_operating_status"?"Trip operating status (snapshot)":"Operating status";if(communication==="unreachable"){lines.push(label+": unavailable");continue;}const raw=Math.trunc(seriesValueAt({rows:series.statusRows,stepped:true},time)),hex="0x"+raw.toString(16).toUpperCase().padStart(4,"0");lines.push(label+": "+statusSummary(raw)+" ("+hex+")");lines.push("Active status bits: "+statusDetails(raw));}return lines;}
 function drawStatistics(){const body=$("#statistics");body.innerHTML="";for(const s of state.visible){const vals=s.rows.map(r=>r.value),limits=extent(vals),tr=document.createElement("tr");const cells=[s.label,s.rows[0].unit,fmt.format(s.sourceCount),fmt.format(limits.min),fmt.format(limits.max),fmt.format(timeAverage(s.rows,s.stepped)),fmt.format(vals.at(-1))];for(const value of cells){const td=document.createElement("td");td.textContent=value;tr.append(td);}body.append(tr);}}
 
+function setupCategoryReordering(){
+  const container=$("#analysis-sections");if(!container)return;
+  const storageKey="tmm-csv-viewer-category-order";let dragging=null,armed=null;
+  try{const order=JSON.parse(localStorage.getItem(storageKey)||"[]"),byKey=new Map([...container.children].map(item=>[item.dataset.category,item]));for(const key of order){const item=byKey.get(key);if(item)container.append(item);}}catch(_error){}
+  const clearTargets=()=>[...container.children].forEach(item=>item.classList.remove("drop-before","drop-after"));
+  const save=()=>localStorage.setItem(storageKey,JSON.stringify([...container.children].map(item=>item.dataset.category)));
+  for(const category of container.children){
+    category.draggable=false;
+    category.querySelector(".category-drag-handle")?.addEventListener("pointerdown",()=>{armed=category;category.draggable=true;});
+    category.querySelector(".category-drag-handle")?.addEventListener("pointerup",()=>{if(!dragging){armed=null;category.draggable=false;}});
+    category.addEventListener("dragstart",event=>{if(armed!==category){event.preventDefault();return;}dragging=category;category.classList.add("dragging-category");event.dataTransfer.effectAllowed="move";});
+    category.addEventListener("dragend",()=>{category.draggable=false;armed=null;dragging?.classList.remove("dragging-category");dragging=null;clearTargets();save();});
+  }
+  container.addEventListener("dragover",event=>{if(!dragging)return;event.preventDefault();const target=event.target.closest(".analysis-category");clearTargets();if(!target||target===dragging)return;const after=event.clientY>target.getBoundingClientRect().top+target.offsetHeight/2;target.classList.add(after?"drop-after":"drop-before");container.insertBefore(dragging,after?target.nextSibling:target);});
+  container.addEventListener("drop",event=>{if(dragging)event.preventDefault();});
+}
+setupCategoryReordering();
+
 $("#open-button").addEventListener("click",()=>$("#file-input").click());
+$("#export-button").addEventListener("click",()=>{
+  if(!state.csv)return;
+  const content=TmmCsvCodec.serialize(state.csv.header,state.csv.records,",","\n",true);
+  const link=document.createElement("a"),url=URL.createObjectURL(new Blob([content],{type:"text/csv;charset=utf-8"}));
+  link.href=url;link.download="tmm-viewer-normalized.csv";link.click();setTimeout(()=>URL.revokeObjectURL(url),0);
+});
 $("#language").addEventListener("change",event=>{language=event.target.value;localStorage.setItem("tmm-csv-viewer-language",language);applyLanguage();fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language})}).catch(()=>{});});
 $("#file-input").addEventListener("change",event=>event.target.files[0]&&openFile(event.target.files[0]));
 $("#sample-button").addEventListener("click",async()=>{const response=await fetch("sample.csv");const text=await response.text();openFile({name:"sample.csv",text:async()=>text});});
 $("#inverter").addEventListener("change",event=>{state.inverter=event.target.value;fillMetrics();render();});
 $("#terminal-layout").addEventListener("change",render);
-$("#curve-mode").addEventListener("change",render);
 document.querySelectorAll("[data-selection]").forEach(button=>button.addEventListener("click",()=>applySelectionPreset(button.dataset.selection)));
 function applyRange(){const a=Date.parse($("#start-time").value),b=Date.parse($("#end-time").value);if(Number.isFinite(a)&&Number.isFinite(b)&&a<b){state.start=a;state.end=b;render();}}
 $("#start-time").addEventListener("change",applyRange);$("#end-time").addEventListener("change",applyRange);
@@ -258,9 +292,9 @@ function syncRangeInputs(){$("#start-time").value=localInput(state.start);$("#en
 function resetView(){state.start=state.fullStart;state.end=state.fullEnd;syncRangeInputs();render();}
 $("#reset-range").addEventListener("click",resetView);$("#reset-view").addEventListener("click",resetView);
 $("#chart").addEventListener("wheel",event=>{if(!state.rows.length)return;event.preventDefault();const canvas=event.currentTarget,p=canvas._plot,rect=canvas.getBoundingClientRect(),x=(event.clientX-rect.left)*p.w/rect.width,ratio=Math.max(0,Math.min(1,(x-p.pad.l)/p.pw)),span=state.end-state.start,factor=event.deltaY<0?.72:1.38,newSpan=Math.min(state.fullEnd-state.fullStart,Math.max(1000,span*factor)),anchor=state.start+span*ratio;let start=anchor-newSpan*ratio,end=start+newSpan;if(start<state.fullStart){end+=state.fullStart-start;start=state.fullStart;}if(end>state.fullEnd){start-=end-state.fullEnd;end=state.fullEnd;}state.start=Math.max(state.fullStart,start);state.end=Math.min(state.fullEnd,end);syncRangeInputs();render();},{passive:false});
-$("#chart").addEventListener("mousedown",event=>{if(event.button!==0)return;state.drag={x:event.clientX,start:state.start,end:state.end};event.currentTarget.parentElement.classList.add("dragging");});
-window.addEventListener("mouseup",()=>{state.drag=null;$(".canvas-wrap").classList.remove("dragging");});
-$("#chart").addEventListener("mousemove",event=>{const canvas=event.currentTarget,p=canvas._plot;if(!p||!state.visible.length)return;const rect=canvas.getBoundingClientRect();if(state.drag){const delta=(state.drag.x-event.clientX)/rect.width*(state.drag.end-state.drag.start),span=state.drag.end-state.drag.start;let start=state.drag.start+delta,end=state.drag.end+delta;if(start<state.fullStart){start=state.fullStart;end=start+span;}if(end>state.fullEnd){end=state.fullEnd;start=end-span;}state.start=start;state.end=end;syncRangeInputs();render();return;}const x=(event.clientX-rect.left)*p.w/rect.width;if(x<p.pad.l||x>p.w-p.pad.r){$("#tooltip").hidden=true;return;}state.hoverX=x;const time=state.start+(x-p.pad.l)/p.pw*(state.end-state.start),communication=communicationAt(time),lines=[`<strong>${dateFmt.format(time)}</strong>`,`Communication: ${communication}`,...tooltipMeasurementLines(time,communication)];const nearby=visibleEvents().filter(e=>Math.abs(e.time-time)<(state.end-state.start)/100),unique=[...new Map(nearby.map(e=>[[e.key,e.code,e.description].join("|"),e])).values()];for(const e of unique.slice(0,4))lines.push(`⚠ ${metricLabel(e.key)} · ${e.code}: ${e.description}`);const tip=$("#tooltip");tip.innerHTML=lines.join("<br>");tip.hidden=false;tip.style.left=Math.min(rect.width-300,event.clientX-rect.left+14)+"px";tip.style.top=Math.max(8,event.clientY-rect.top-20)+"px";drawChart();});
+$("#chart").addEventListener("mousedown",event=>{if(event.button!==0)return;state.drag={x:event.clientX,start:state.start,end:state.end,moved:false};event.currentTarget.parentElement.classList.add("dragging");});
+window.addEventListener("mouseup",event=>{const drag=state.drag;state.drag=null;$(".canvas-wrap").classList.remove("dragging");if(!drag||drag.moved||event.target!==$("#chart"))return;const canvas=$("#chart"),p=canvas._plot,rect=canvas.getBoundingClientRect(),x=(event.clientX-rect.left)*p.w/rect.width;if(x<p.pad.l||x>p.w-p.pad.r)return;const time=state.start+(x-p.pad.l)/p.pw*(state.end-state.start);state.markers.push({id:`${Date.now()}-${Math.random()}`,time});drawMarkers();drawChart();});
+$("#chart").addEventListener("mousemove",event=>{const canvas=event.currentTarget,p=canvas._plot;if(!p||!state.visible.length)return;const rect=canvas.getBoundingClientRect();if(state.drag){if(Math.abs(state.drag.x-event.clientX)>4)state.drag.moved=true;if(!state.drag.moved)return;const delta=(state.drag.x-event.clientX)/rect.width*(state.drag.end-state.drag.start),span=state.drag.end-state.drag.start;let start=state.drag.start+delta,end=state.drag.end+delta;if(start<state.fullStart){start=state.fullStart;end=start+span;}if(end>state.fullEnd){end=state.fullEnd;start=end-span;}state.start=start;state.end=end;syncRangeInputs();render();return;}const x=(event.clientX-rect.left)*p.w/rect.width;if(x<p.pad.l||x>p.w-p.pad.r){$("#tooltip").hidden=true;return;}state.hoverX=x;const time=state.start+(x-p.pad.l)/p.pw*(state.end-state.start),communication=communicationAt(time),lines=[`<strong>${dateFmt.format(time)}</strong>`,`Communication: ${communication}`,...tooltipMeasurementLines(time,communication)];const nearby=visibleEvents().filter(e=>Math.abs(e.time-time)<(state.end-state.start)/100),unique=[...new Map(nearby.map(e=>[[e.key,e.code,e.description].join("|"),e])).values()];for(const e of unique.slice(0,4))lines.push(`⚠ ${metricLabel(e.key)} · ${e.code}: ${e.description}`);const tip=$("#tooltip");tip.innerHTML=lines.join("<br>");tip.hidden=false;tip.style.left=Math.min(rect.width-300,event.clientX-rect.left+14)+"px";tip.style.top=Math.max(8,event.clientY-rect.top-20)+"px";drawChart();});
 $("#chart").addEventListener("mouseleave",()=>{state.hoverX=null;$("#tooltip").hidden=true;drawChart();});
 window.addEventListener("resize",()=>requestAnimationFrame(drawChart));
 applyLanguage();
