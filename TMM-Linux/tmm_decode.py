@@ -62,6 +62,32 @@ INPUT_TERMINAL_BITS_AS3 = {
     8: "DI11", 9: "DI12", 10: "DI13", 11: "DI14", 12: "DI15", 13: "DI16",
 }
 
+
+def terminal_signal_bits(model: str) -> dict[str, int]:
+    """Return the five operator-facing terminal signals for a drive family."""
+    if model == "VF-AS1":
+        definitions = INPUT_TERMINAL_BITS_AS1
+    elif model == "VF-AS3J":
+        definitions = INPUT_TERMINAL_BITS_AS3
+    else:
+        definitions = INPUT_TERMINAL_BITS_SMALL
+    return {label: bit for bit, label in definitions.items() if label in {"F", "R", "S1", "S2", "S3"}}
+
+
+def terminal_history_items(items: list[dict[str, Any]], metric: str, model: str) -> list[dict[str, Any]]:
+    """Reconstruct a terminal lane from the canonical input status word."""
+    signal = metric.removeprefix("terminal_").upper()
+    bit = terminal_signal_bits(model).get(signal)
+    if bit is None:
+        return []
+    result = []
+    for item in items:
+        raw_status = int(item["raw_value"])
+        active = 1 if raw_status & (1 << bit) else 0
+        result.append({**item, "metric": metric, "raw_value": active,
+                       "value": float(active), "unit": "on/off"})
+    return result
+
 TRIP_CODES = {
     0x00: ("nerr", "Kein Fehler"),
     0x01: ("oc1", "Überstrom während Beschleunigung"),
@@ -143,12 +169,9 @@ def decode_metric(metric: str, raw_value: int, model: str = "VF-AS1") -> dict[st
             "active": [{"code": "unreachable", "label": "Keine gültige Modbus-Kommunikation"}],
         }
     if metric == "input_terminal_status":
-        if model == "VF-AS1":
-            definitions = INPUT_TERMINAL_BITS_AS1
-        elif model == "VF-AS3J":
-            definitions = INPUT_TERMINAL_BITS_AS3
-        else:
-            definitions = INPUT_TERMINAL_BITS_SMALL
+        if model == "VF-AS1": definitions = INPUT_TERMINAL_BITS_AS1
+        elif model == "VF-AS3J": definitions = INPUT_TERMINAL_BITS_AS3
+        else: definitions = INPUT_TERMINAL_BITS_SMALL
         active = _active_bits(raw_value, definitions)
         return {
             "summary": f"{len(active)} Eingänge aktiv" if active else "Alle Eingänge aus",

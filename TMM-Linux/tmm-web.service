@@ -1,5 +1,5 @@
 [Unit]
-Description=Toshiba Modbus Monitor (TMM) V1.0 web interface
+Description=Toshiba Modbus Monitor (TMM) V1.3 web interface
 After=network.target tmm.service
 Wants=tmm.service
 
@@ -16,6 +16,7 @@ PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
 ReadWritePaths=/var/lib/tmm
+ReadWritePaths=/etc/tmm
 ReadWritePaths=-/mnt/tmm-data
 
 [Install]

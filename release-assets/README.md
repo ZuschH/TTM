@@ -1,4 +1,15 @@
-# Version 1.0.0 release archives
+# Release archives
+
+## TMM Linux Master 1.3.0 RC3
+
+| Archive | SHA-256 |
+| --- | --- |
+| `TMM-Linux-v1.3.0-rc3-source.zip` | `97d0102bb58d8474db08601b2740820bad99c3694d21fa23ff3b96a73cce268d` |
+
+This prerelease is intended for the final 24-hour machine test. It contains no
+Sequent Microsystems PDFs; see `TMM-Linux/THIRD_PARTY_NOTICES.md`.
+
+## Version 1.0.0
 
 These archives contain the final validated V1.0.0 source packages.
 

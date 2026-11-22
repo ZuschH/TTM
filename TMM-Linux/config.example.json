@@ -6,6 +6,16 @@
   "recording": {
     "reference": ""
   },
+  "condition_monitoring": {
+    "rules": []
+  },
+  "ups_shutdown": {
+    "enabled": false,
+    "dry_run": true,
+    "input_voltage_threshold_v": 4.5,
+    "input_loss_delay_seconds": 30,
+    "watchdog_handoff_seconds": 15
+  },
   "serial": {
     "device": "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_B001YLYP-if00-port0",
     "baudrate": 19200,
@@ -14,12 +24,25 @@
     "bytesize": 8,
     "timeout_seconds": 0.75
   },
+  "serial_buses": [
+    {
+      "id": "bus1",
+      "device": "/dev/serial/by-id/usb-FTDI_FT232R_USB_UART_B001YLYP-if00-port0",
+      "baudrate": 19200,
+      "parity": "E",
+      "stopbits": 1,
+      "bytesize": 8,
+      "timeout_seconds": 0.75
+    }
+  ],
   "inverters": [
     {
       "name": "VFAS1-4037PL",
       "model": "VF-AS1",
+      "bus_id": "bus1",
       "slave_id": 1,
-      "enabled": true
+      "enabled": true,
+      "channels": {}
     }
   ],
   "polling": {
@@ -34,6 +57,112 @@
     "retry_delay_seconds": 0.15,
     "reconnect_delay_seconds": 2.0
   },
+  "communication_bridge": {
+    "enabled": false,
+    "mode": "transparent_proxy",
+    "response_timeout_seconds": 0.75,
+    "idle_read_timeout_seconds": 0.1,
+    "scheduled_polling": {
+      "enabled": false,
+      "passive_decode": true,
+      "idle_guard_seconds": 0.02,
+      "response_timeout_seconds": 0.1,
+      "minimum_gap_seconds": 0.02
+    },
+    "hmi_port": {"device": "", "baudrate": 19200, "parity": "E", "stopbits": 1},
+    "drive_port": {"device": "", "baudrate": 19200, "parity": "E", "stopbits": 1}
+  },
+  "addons": [
+    {
+      "id": "pi_gpio",
+      "type": "raspberry_pi_gpio",
+      "label": "Raspberry Pi digital inputs",
+      "stack": 0,
+      "interval_seconds": 0.05,
+      "enabled": false,
+      "channels": [
+        {"channel": 17, "label": "GPIO 17", "pull": "down", "active_low": false, "enabled": false, "live": false, "record": false},
+        {"channel": 27, "label": "GPIO 27", "pull": "up", "active_low": true, "enabled": false, "live": false, "record": false}
+      ]
+    },
+    {
+      "id": "system_ups",
+      "type": "sequent_super_watchdog",
+      "label": "System UPS & watchdog",
+      "interval_seconds": 1.0,
+      "input_loss_threshold_v": 4.5,
+      "battery_shutdown_voltage_v": 3.05,
+      "battery_full_voltage_v": 4.15,
+      "enabled": false,
+      "channels": [
+        {"metric": "input_voltage", "enabled": false, "live": false, "record": false},
+        {"metric": "raspberry_voltage", "enabled": false, "live": false, "record": false},
+        {"metric": "battery_voltage", "enabled": false, "live": false, "record": false},
+        {"metric": "board_temperature", "enabled": false, "live": false, "record": false},
+        {"metric": "charge_status", "enabled": false, "live": false, "record": false},
+        {"metric": "reset_count", "enabled": false, "live": false, "record": false}
+      ]
+    },
+    {
+      "id": "system_fan",
+      "type": "sequent_smart_fan",
+      "label": "System cooling",
+      "stack": 0,
+      "interval_seconds": 2.0,
+      "enabled": false,
+      "control": {
+        "mode": "monitor",
+        "minimum_power_percent": 25,
+        "start_temperature_c": 45,
+        "full_temperature_c": 70,
+        "manual_power_percent": 25,
+        "failsafe_power_percent": 100
+      },
+      "channels": [
+        {"metric": "fan_power", "enabled": false, "live": false, "record": false},
+        {"metric": "stop_interval", "enabled": false, "live": false, "record": false},
+        {"metric": "processor_temperature", "enabled": false, "live": false, "record": false},
+        {"metric": "target_power", "enabled": false, "live": false, "record": false}
+      ]
+    },
+    {
+      "id": "field_di",
+      "type": "sequent_16inpind",
+      "label": "External digital inputs",
+      "stack": 0,
+      "interval_seconds": 0.02,
+      "enabled": false,
+      "channels": [
+        {"channel": 1, "label": "Safety circuit", "enabled": false, "live": false, "record": false},
+        {"channel": 2, "label": "Machine ready", "enabled": false, "live": false, "record": false}
+      ]
+    },
+    {
+      "id": "field_ai",
+      "type": "sequent_24b8vin",
+      "label": "External analog inputs",
+      "stack": 1,
+      "interval_seconds": 0.05,
+      "enabled": false,
+      "channels": [
+        {"channel": 1, "label": "Hydraulic pressure", "gain": 1, "scale": 25.0, "offset": 0.0, "unit": "bar", "decimals": 2, "enabled": false, "live": false, "record": false}
+      ]
+    },
+    {
+      "id": "field_multiio",
+      "type": "sequent_multiio",
+      "label": "External Multi-IO",
+      "stack": 2,
+      "interval_seconds": 0.05,
+      "enabled": false,
+      "channels": [
+        {"signal": "digital", "channel": 1, "label": "Safety circuit", "enabled": false, "live": false, "record": false},
+        {"signal": "voltage", "channel": 1, "label": "Position signal", "scale": 1.0, "offset": 0.0, "unit": "V", "enabled": false, "live": false, "record": false},
+        {"signal": "current", "channel": 1, "label": "Pressure transmitter", "scale": 1.0, "offset": 0.0, "unit": "mA", "enabled": false, "live": false, "record": false},
+        {"signal": "temperature", "channel": 1, "label": "Bearing temperature", "unit": "°C", "enabled": false, "live": false, "record": false}
+      ]
+    }
+  ],
   "storage": {
     "database": "/var/lib/tmm/measurements.sqlite3",
     "retention_days": 365,

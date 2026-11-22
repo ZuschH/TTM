@@ -107,12 +107,17 @@ PROFILES = {
     "VF-S15": {
         "registers": COMMON_MONITORS + BRAKING_MONITOR + MODERN_DRIVE_IO_MONITORS + VF_AS1_DIAGNOSTIC_MONITORS + COMMON_DEVICE_INFORMATION,
         "decoder": "VF-S15",
-        "max_read_words": 8,
+        # The VF-S15 Modbus RTU implementation rejects direct block reads
+        # spanning more than one monitor word (see E6581913, §5.1.1).
+        "max_read_words": 1,
     },
     "VF-AS3J": {
         "registers": COMMON_MONITORS + BRAKING_MONITOR + MODERN_DRIVE_IO_MONITORS + VF_AS1_DIAGNOSTIC_MONITORS + COMMON_DEVICE_INFORMATION + VF_AS3_TEMPERATURE_MONITORS,
         "decoder": "VF-AS3J",
-        "max_read_words": 8,
+        # E6582143 defines a dedicated one-word request. Direct multi-word
+        # addressing additionally depends on F830, so the built-in profile
+        # stays independent of that drive parameter and reads one word safely.
+        "max_read_words": 1,
     },
 }
 

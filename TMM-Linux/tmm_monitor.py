@@ -17,12 +17,23 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable
 
+from tmm_decode import terminal_signal_bits
+from tmm_conditions import ConditionEvaluator, condition_rules
 from tmm_profiles import profile
+from tmm_addons import SequentAddon, configured_addons
 
 try:
     import serial
 except ImportError:  # Allows protocol/database tests without the runtime dependency.
     serial = None  # type: ignore[assignment]
+
+
+# Vendor drivers open the same /dev/i2c-1 device independently.  The kernel
+# serialises individual ioctl calls, but a complete card read often consists of
+# several register operations and is not transactional.  One shared lock keeps
+# stacked Sequent cards from interleaving such sequences under high-rate input
+# sampling.
+ADDON_I2C_LOCK = threading.Lock()
 
 LOG = logging.getLogger("tmm")
 
@@ -176,6 +187,7 @@ class Register:
     sampling: str = "normal"
     derived: bool = False
     record_history: bool = True
+    label: str = ""
 
 
 COMMUNICATION_REGISTER = Register("communication_status", 0xFFFF, 1, "raw", "fast")
@@ -195,6 +207,7 @@ class Device:
     rated_output_voltage_v: float | None = None
     motor_rated_power_kw: float | None = None
     motor_rated_speed_rpm: float | None = None
+    bus_id: str = "default"
 
 
 @dataclass
@@ -208,13 +221,55 @@ class PollStats:
 def load_config(path: Path) -> dict[str, Any]:
     with path.open("r", encoding="utf-8") as handle:
         config = json.load(handle)
-    required = ("serial", "polling", "storage")
+    required = ("polling", "storage")
     missing = [key for key in required if key not in config]
+    if "serial" not in config and "serial_buses" not in config:
+        missing.append("serial or serial_buses")
     if missing:
         raise ValueError(f"missing configuration keys: {', '.join(missing)}")
     if "inverters" not in config and ("inverter" not in config or "registers" not in config):
         raise ValueError("configure either 'inverters' or legacy 'inverter' plus 'registers'")
+    configured_addons(config)
+    configured_serial_buses(config)
     return config
+
+
+def configured_serial_buses(config: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Normalize legacy one-port and new named multi-port configurations."""
+    raw = config.get("serial_buses")
+    named_buses = raw is not None
+    if raw is None:
+        raw = [{"id": "default", **config.get("serial", {"device": "/dev/serial/by-id/unconfigured"})}]
+    if not isinstance(raw, list) or not raw:
+        raise ValueError("serial_buses must contain at least one bus")
+    result: dict[str, dict[str, Any]] = {}
+    devices: set[str] = set()
+    for item in raw:
+        if not isinstance(item, dict):
+            raise ValueError("every serial bus must be an object")
+        identifier = str(item.get("id", "")).strip()
+        device = str(item.get("device", "")).strip()
+        if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", identifier) or identifier in result:
+            raise ValueError(f"invalid or duplicate serial bus id: {identifier!r}")
+        if named_buses and not device.startswith("/dev/serial/by-id/"):
+            raise ValueError(f"serial bus {identifier} must use /dev/serial/by-id")
+        if device in devices:
+            raise ValueError(f"serial adapter assigned to more than one bus: {device}")
+        parity = str(item.get("parity", "E")).upper()
+        if parity not in {"E", "N", "O"}:
+            raise ValueError(f"invalid parity for serial bus {identifier}")
+        baudrate = int(item.get("baudrate", 19200))
+        stopbits = int(item.get("stopbits", 1))
+        bytesize = int(item.get("bytesize", 8))
+        timeout = float(item.get("timeout_seconds", 0.75))
+        if baudrate <= 0 or stopbits not in {1, 2} or bytesize not in {7, 8} or timeout <= 0:
+            raise ValueError(f"invalid communication settings for serial bus {identifier}")
+        settings = dict(item)
+        settings.update(id=identifier, device=device, baudrate=baudrate, parity=parity,
+                        stopbits=stopbits, bytesize=bytesize, timeout_seconds=timeout)
+        result[identifier] = settings
+        devices.add(device)
+    return result
 
 
 def configured_registers(config: dict[str, Any]) -> list[Register]:
@@ -252,6 +307,7 @@ def configured_devices(config: dict[str, Any]) -> list[Device]:
                 alert_metrics.discard(str(key))
             else:
                 alert_metrics.add(str(key))
+    buses = configured_serial_buses(config)
     slave_ids = set()
     names = set()
     for entry in entries:
@@ -264,9 +320,12 @@ def configured_devices(config: dict[str, Any]) -> list[Device]:
         slave_id = int(entry["slave_id"])
         if not 1 <= slave_id <= 247:
             raise ValueError(f"invalid slave_id for {name}: {slave_id}")
-        if slave_id in slave_ids:
-            raise ValueError(f"duplicate slave_id: {slave_id}")
-        slave_ids.add(slave_id)
+        bus_id = str(entry.get("bus_id", next(iter(buses))))
+        if bus_id not in buses:
+            raise ValueError(f"unknown serial bus for {name}: {bus_id}")
+        if (bus_id, slave_id) in slave_ids:
+            raise ValueError(f"duplicate slave_id {slave_id} on serial bus {bus_id}")
+        slave_ids.add((bus_id, slave_id))
         selected_profile = profile(str(entry.get("model", "VF-AS1")))
         if entry.get("replace_profile_registers", False):
             register_config = entry.get("registers", [])
@@ -275,6 +334,7 @@ def configured_devices(config: dict[str, Any]) -> list[Device]:
             merged.update({item["key"]: item for item in entry.get("registers", [])})
             register_config = list(merged.values())
         registers = configured_registers({"registers": register_config})
+        channels_declared = "channels" in entry
         channel_modes = entry.get("channels", {})
         if not isinstance(channel_modes, dict):
             raise ValueError(f"channels for {name} must be an object")
@@ -284,12 +344,14 @@ def configured_devices(config: dict[str, Any]) -> list[Device]:
         }
         if invalid_modes:
             raise ValueError(f"invalid channel mode for {name}: {invalid_modes}")
+        hidden_live_cards = set(entry.get("hidden_live_cards", []))
+        def selected_mode(register: Register) -> str:
+            default_mode = "off" if channels_declared else "record"
+            return str(channel_modes.get(register.key, "record" if register.key in hidden_live_cards else default_mode))
         registers = [
-            replace(register, record_history=(
-                register.key == "operating_status" or channel_modes.get(register.key, "record") == "record"
-            ))
+            replace(register, record_history=selected_mode(register) == "record")
             for register in registers
-            if channel_modes.get(register.key, "record") != "off" or register.key in alert_metrics
+            if selected_mode(register) != "off" or register.key == "operating_status" or register.key in alert_metrics
         ]
         max_read_words = int(entry.get("max_read_words", selected_profile.get("max_read_words", 1)))
         if not 1 <= max_read_words <= 125:
@@ -324,6 +386,7 @@ def configured_devices(config: dict[str, Any]) -> list[Device]:
             machine_speed_factor, machine_speed_unit,
             rated_output_current_a, rated_output_voltage_v,
             motor_rated_power_kw, motor_rated_speed_rpm,
+            bus_id,
         ))
     if not devices:
         raise ValueError("at least one enabled inverter must be configured")
@@ -331,7 +394,7 @@ def configured_devices(config: dict[str, Any]) -> list[Device]:
 
 
 class Database:
-    def __init__(self, path: Path, change_logging: dict[str, Any] | None = None, recording_reference: str = ""):
+    def __init__(self, path: Path, change_logging: dict[str, Any] | None = None, recording_reference: str = "", conditions: list[Any] | None = None):
         self.change_logging = change_logging or {"enabled": False}
         path.parent.mkdir(parents=True, exist_ok=True)
         self.connection = sqlite3.connect(path)
@@ -361,6 +424,7 @@ class Database:
                 inverter TEXT NOT NULL,
                 slave_id INTEGER NOT NULL,
                 metric TEXT NOT NULL,
+                metric_label TEXT NOT NULL DEFAULT '',
                 register_address INTEGER NOT NULL,
                 raw_value INTEGER NOT NULL,
                 value REAL NOT NULL,
@@ -378,6 +442,7 @@ class Database:
                 inverter TEXT NOT NULL, slave_id INTEGER NOT NULL, metric TEXT NOT NULL,
                 observed_at TEXT NOT NULL, register_address INTEGER NOT NULL,
                 raw_value INTEGER NOT NULL, value REAL NOT NULL, unit TEXT NOT NULL,
+                metric_label TEXT NOT NULL DEFAULT '',
                 PRIMARY KEY (inverter, slave_id, metric)
             ) WITHOUT ROWID;
             CREATE TABLE IF NOT EXISTS latest_poll_cycles (
@@ -391,6 +456,13 @@ class Database:
                 sample_count INTEGER NOT NULL, cycle_count INTEGER NOT NULL,
                 oldest_sample TEXT, newest_sample TEXT
             );
+            CREATE TABLE IF NOT EXISTS storage_growth_samples (
+                observed_at TEXT PRIMARY KEY,
+                database_bytes INTEGER NOT NULL,
+                allocated_bytes INTEGER,
+                used_bytes INTEGER,
+                reusable_bytes INTEGER
+            ) WITHOUT ROWID;
             CREATE TABLE IF NOT EXISTS logged_values (
                 inverter TEXT NOT NULL, slave_id INTEGER NOT NULL, metric TEXT NOT NULL,
                 raw_value INTEGER NOT NULL, value REAL NOT NULL, unit TEXT NOT NULL,
@@ -417,6 +489,29 @@ class Database:
                 verified_raw_value INTEGER NOT NULL, result TEXT NOT NULL,
                 source_backup TEXT NOT NULL DEFAULT '', target_sha256 TEXT NOT NULL DEFAULT ''
             );
+            CREATE TABLE IF NOT EXISTS thermal_events (
+                id INTEGER PRIMARY KEY, observed_at TEXT NOT NULL, state TEXT NOT NULL,
+                temperature_celsius REAL NOT NULL, interval_factor INTEGER NOT NULL,
+                detail TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS thermal_events_observed_at ON thermal_events(observed_at);
+            CREATE TABLE IF NOT EXISTS thermal_protection (
+                singleton INTEGER PRIMARY KEY CHECK (singleton = 1), observed_at TEXT NOT NULL,
+                state TEXT NOT NULL, temperature_celsius REAL NOT NULL, interval_factor INTEGER NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS milestones (
+                id INTEGER PRIMARY KEY, observed_at TEXT NOT NULL, rule_id TEXT NOT NULL,
+                rule_revision INTEGER NOT NULL, rule_name TEXT NOT NULL, event_type TEXT NOT NULL,
+                severity TEXT NOT NULL, source TEXT NOT NULL, metric TEXT NOT NULL,
+                value REAL NOT NULL, unit TEXT NOT NULL, operator TEXT NOT NULL,
+                target_value REAL NOT NULL, snapshot_json TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS milestones_observed_at ON milestones(observed_at);
+            CREATE INDEX IF NOT EXISTS milestones_rule_time ON milestones(rule_id, observed_at);
+            CREATE TABLE IF NOT EXISTS condition_states (
+                rule_id TEXT PRIMARY KEY, signature TEXT NOT NULL, active INTEGER NOT NULL,
+                pending_since TEXT, last_value REAL, last_observed_at TEXT
+            ) WITHOUT ROWID;
             """
         )
         self.connection.execute(
@@ -432,10 +527,18 @@ class Database:
         ):
             if name not in columns:
                 self.connection.execute(f"ALTER TABLE poll_cycles ADD COLUMN {name} {definition}")
+        for table in ("samples", "latest_values"):
+            columns = {row[1] for row in self.connection.execute(f"PRAGMA table_info({table})")}
+            if "metric_label" not in columns:
+                self.connection.execute(f"ALTER TABLE {table} ADD COLUMN metric_label TEXT NOT NULL DEFAULT ''")
         parameter_change_columns = {row[1] for row in self.connection.execute("PRAGMA table_info(parameter_changes)")}
         for name, definition in (("source_backup", "TEXT NOT NULL DEFAULT ''"), ("target_sha256", "TEXT NOT NULL DEFAULT ''")):
             if name not in parameter_change_columns:
                 self.connection.execute(f"ALTER TABLE parameter_changes ADD COLUMN {name} {definition}")
+        growth_columns = {row[1] for row in self.connection.execute("PRAGMA table_info(storage_growth_samples)")}
+        for name in ("allocated_bytes", "used_bytes", "reusable_bytes"):
+            if name not in growth_columns:
+                self.connection.execute(f"ALTER TABLE storage_growth_samples ADD COLUMN {name} INTEGER")
         if self.connection.execute("SELECT 1 FROM storage_stats WHERE singleton = 1").fetchone() is None:
             self.connection.execute(
                 """INSERT INTO storage_stats
@@ -443,6 +546,8 @@ class Database:
                           (SELECT MIN(observed_at) FROM samples), (SELECT MAX(observed_at) FROM samples)"""
             )
         self.connection.commit()
+        self.last_storage_growth_sample = float("-inf")
+        self._record_storage_growth_sample(utc_now(), force=True)
         persisted_logged = {
             (row[0], row[1], row[2]): (row[3], row[4], row[5], row[6])
             for row in self.connection.execute(
@@ -462,10 +567,53 @@ class Database:
         # across restarts over session snapshots.
         initial_snapshot = bool(self.change_logging.get("initial_snapshot_on_start", True))
         self.last_logged = {} if self.change_logging.get("enabled", False) and initial_snapshot else persisted_logged
+        # The last physically observed sample is intentionally separate from
+        # last_logged: change logging may skip many steady cycles.
+        self.last_observed: dict[tuple[str, int, str], tuple[int, str]] = {}
         self.last_cycle_history: dict[tuple[str, int], float] = {}
         self.communication_failures: dict[tuple[str, int], int] = {}
         self.last_communication_state: dict[tuple[str, int], int] = {}
         self.last_diagnostic_cleanup = 0.0
+        self.condition_evaluator = ConditionEvaluator(self.connection, list(conditions or []))
+
+    def _record_storage_growth_sample(self, observed_at: str, force: bool = False) -> None:
+        """Sample allocated, occupied, and reusable SQLite pages."""
+        now_monotonic = time.monotonic()
+        if not force and now_monotonic - self.last_storage_growth_sample < 60.0:
+            return
+        page_count = int(self.connection.execute("PRAGMA page_count").fetchone()[0])
+        freelist_count = int(self.connection.execute("PRAGMA freelist_count").fetchone()[0])
+        page_size = int(self.connection.execute("PRAGMA page_size").fetchone()[0])
+        allocated_bytes = page_count * page_size
+        reusable_bytes = freelist_count * page_size
+        used_bytes = max(0, allocated_bytes - reusable_bytes)
+        with self.connection:
+            self.connection.execute(
+                """INSERT OR REPLACE INTO storage_growth_samples
+                   (observed_at,database_bytes,allocated_bytes,used_bytes,reusable_bytes)
+                   VALUES (?,?,?,?,?)""",
+                (observed_at, allocated_bytes, allocated_bytes, used_bytes, reusable_bytes),
+            )
+        self.last_storage_growth_sample = now_monotonic
+
+    def recording_identity(self) -> tuple[str, str]:
+        row = self.connection.execute(
+            "SELECT reference, created_at FROM recording_info WHERE singleton=1"
+        ).fetchone()
+        return (str(row[0]), str(row[1])) if row else ("", "")
+
+    def reset_runtime_state(self) -> None:
+        """Forget process-local baselines after another connection resets the recording."""
+        self.last_logged.clear()
+        self.last_live.clear()
+        self.last_observed.clear()
+        self.last_cycle_history.clear()
+        self.communication_failures.clear()
+        self.last_communication_state.clear()
+        self.condition_evaluator.latest.clear()
+
+    def configure_condition_rules(self, rules: list[Any]) -> None:
+        self.condition_evaluator.configure(rules)
 
     def _communication_sample(
         self, inverter: str, slave_id: int, samples: list[tuple[Register, int]], errors: list[str]
@@ -538,9 +686,24 @@ class Database:
                 key: value for key, value in self.last_logged.items()
                 if key[:2] != (inverter, slave_id)
             }
+            self.last_observed = {
+                key: value for key, value in self.last_observed.items()
+                if key[:2] != (inverter, slave_id)
+            }
         logged_samples = self._samples_to_log(inverter, slave_id, samples)
         if communication_sample is not None:
             logged_samples.append(communication_sample)
+        history_samples = [(register, raw, observed_at) for register, raw in logged_samples]
+        if self.change_logging.get("enabled", False):
+            # A sparse analogue history must express a step, not a diagonal
+            # interpolation from the last stored change. Insert the actual
+            # preceding cycle as a support point immediately before the new
+            # changed value. Raw/status values retain their normal semantics.
+            for register, raw in logged_samples:
+                previous = self.last_observed.get((inverter, slave_id, register.key))
+                if (register.unit != "raw" and previous is not None and previous[0] != raw
+                        and previous[1] < observed_at):
+                    history_samples.insert(0, (register, previous[0], previous[1]))
         live_samples = samples + ([communication_sample] if communication_sample is not None else [])
         changed_live_samples = [
             (register, raw) for register, raw in live_samples
@@ -567,22 +730,23 @@ class Database:
                 cycle_id = int(cursor.lastrowid)
             self.connection.executemany(
                 """INSERT INTO samples
-                   (cycle_id, observed_at, inverter, slave_id, metric,
+                   (cycle_id, observed_at, inverter, slave_id, metric, metric_label,
                     register_address, raw_value, value, unit)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 [
                     (
                         cycle_id,
-                        observed_at,
+                        sample_time,
                         inverter,
                         slave_id,
                         register.key,
+                        register.label,
                         register.address,
                         raw,
                         raw * register.scale,
                         register.unit,
                     )
-                    for register, raw in logged_samples
+                    for register, raw, sample_time in history_samples
                 ],
             )
             self.connection.execute(
@@ -598,14 +762,19 @@ class Database:
             )
             self.connection.executemany(
                 """INSERT INTO latest_values
-                   (inverter, slave_id, metric, observed_at, register_address, raw_value, value, unit)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                   (inverter, slave_id, metric, observed_at, register_address, raw_value, value, unit, metric_label)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                    ON CONFLICT(inverter, slave_id, metric) DO UPDATE SET
                      observed_at=excluded.observed_at, register_address=excluded.register_address,
-                     raw_value=excluded.raw_value, value=excluded.value, unit=excluded.unit""",
+                     raw_value=excluded.raw_value, value=excluded.value, unit=excluded.unit,
+                     metric_label=excluded.metric_label""",
                 [(inverter, slave_id, register.key, observed_at, register.address, raw,
-                  raw * register.scale, register.unit) for register, raw in changed_live_samples],
+                  raw * register.scale, register.unit, register.label) for register, raw in changed_live_samples],
             )
+            for register, raw in live_samples:
+                self.condition_evaluator.evaluate(
+                    observed_at, inverter, register.key, raw * register.scale, register.unit
+                )
             self.connection.executemany(
                 """INSERT INTO logged_values
                    (inverter, slave_id, metric, raw_value, value, unit, logged_at)
@@ -616,7 +785,9 @@ class Database:
                 [(inverter, slave_id, register.key, raw, raw * register.scale, register.unit, observed_at)
                  for register, raw in logged_samples],
             )
-            minute = observed_at[:19]
+            # Communication quality is useful as a trend, but must remain a
+            # compact aggregate rather than another per-poll raw time series.
+            minute = f"{observed_at[:16]}:00"
             self.connection.execute(
                 """INSERT INTO diagnostic_minutes
                    (minute, inverter, slave_id, cycles, samples, failed_reads, transactions,
@@ -632,10 +803,6 @@ class Database:
                 (minute, inverter, slave_id, successful_reads, len(errors), stats.transactions,
                  stats.retries, stats.duration_ms, stats.duration_ms, stats.estimated_bus_ms),
             )
-            if now_monotonic - self.last_diagnostic_cleanup >= 60.0:
-                diagnostic_cutoff = (datetime.now(timezone.utc) - timedelta(minutes=5)).isoformat(timespec="seconds")[:19]
-                self.connection.execute("DELETE FROM diagnostic_minutes WHERE minute < ?", (diagnostic_cutoff,))
-                self.last_diagnostic_cleanup = now_monotonic
             if store_history_cycle:
                 self.connection.execute(
                     "UPDATE storage_stats SET cycle_count=cycle_count + 1 WHERE singleton=1"
@@ -644,7 +811,7 @@ class Database:
                 self.connection.execute(
                     """UPDATE storage_stats SET sample_count=sample_count + ?,
                        oldest_sample=COALESCE(oldest_sample, ?), newest_sample=? WHERE singleton=1""",
-                    (len(logged_samples), observed_at, observed_at),
+                    (len(history_samples), observed_at, observed_at),
                 )
         for register, raw in logged_samples:
             self.last_logged[(inverter, slave_id, register.key)] = (
@@ -652,8 +819,12 @@ class Database:
             )
         for register, raw in changed_live_samples:
             self.last_live[(inverter, slave_id, register.key)] = (raw, register.address, register.unit)
+        for register, raw in samples:
+            if register.record_history:
+                self.last_observed[(inverter, slave_id, register.key)] = (raw, observed_at)
         if store_history_cycle:
             self.last_cycle_history[cycle_key] = now_monotonic
+        self._record_storage_growth_sample(observed_at)
 
     def close(self) -> None:
         try:
@@ -662,6 +833,21 @@ class Database:
             pass
         self.connection.close()
 
+    def store_thermal_event(self, observed_at: str, state: str, temperature_celsius: float, interval_factor: int, detail: str) -> None:
+        """Persist every thermal-protection transition for audit and export."""
+        with self.connection:
+            self.connection.execute(
+                "INSERT INTO thermal_events(observed_at,state,temperature_celsius,interval_factor,detail) VALUES (?,?,?,?,?)",
+                (observed_at, state, temperature_celsius, interval_factor, detail),
+            )
+            self.connection.execute(
+                """INSERT INTO thermal_protection(singleton,observed_at,state,temperature_celsius,interval_factor)
+                   VALUES (1,?,?,?,?) ON CONFLICT(singleton) DO UPDATE SET
+                   observed_at=excluded.observed_at,state=excluded.state,temperature_celsius=excluded.temperature_celsius,
+                   interval_factor=excluded.interval_factor""",
+                (observed_at, state, temperature_celsius, interval_factor),
+            )
+
     def reinitialize(self, reference: str, archive_path: Path | None = None) -> None:
         """Optionally back up, then clear the live database without replacing its file."""
         if archive_path is not None:
@@ -669,11 +855,19 @@ class Database:
             with sqlite3.connect(archive_path) as archive:
                 self.connection.backup(archive)
         with self.connection:
+            existing_tables = {
+                str(row[0]) for row in self.connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
             for table in (
                 "samples", "poll_cycles", "latest_values", "latest_poll_cycles",
-                "logged_values", "diagnostic_minutes",
+                "logged_values", "diagnostic_minutes", "thermal_events", "thermal_protection",
+                "milestones", "condition_states", "storage_growth_samples",
+                "modbus_proxy_transactions",
             ):
-                self.connection.execute(f"DELETE FROM {table}")
+                if table in existing_tables:
+                    self.connection.execute(f"DELETE FROM {table}")
             self.connection.execute(
                 "UPDATE storage_stats SET sample_count=0, cycle_count=0, oldest_sample=NULL, newest_sample=NULL WHERE singleton=1"
             )
@@ -681,12 +875,10 @@ class Database:
                 "UPDATE recording_info SET reference=?, created_at=? WHERE singleton=1",
                 (reference, utc_now()),
             )
-        self.last_logged.clear()
-        self.last_live.clear()
-        self.last_cycle_history.clear()
-        self.communication_failures.clear()
-        self.last_communication_state.clear()
+        self.reset_runtime_state()
         self.connection.execute("PRAGMA wal_checkpoint(PASSIVE)")
+        self.last_storage_growth_sample = float("-inf")
+        self._record_storage_growth_sample(utc_now(), force=True)
 
     def invalidate_metrics(self, inverter: str, slave_id: int, metrics: set[str]) -> None:
         placeholders = ",".join("?" for _ in metrics)
@@ -703,6 +895,16 @@ class Database:
         for metric in metrics:
             self.last_live.pop((inverter, slave_id, metric), None)
             self.last_logged.pop((inverter, slave_id, metric), None)
+
+    def reset_source_state(self, inverter: str, slave_id: int) -> None:
+        """Forget cached values after another collector cleared the database."""
+        source = (inverter, slave_id)
+        for cache in (self.last_logged, self.last_live, self.last_observed):
+            for key in [key for key in cache if key[:2] == source]:
+                cache.pop(key, None)
+        self.last_cycle_history.pop(source, None)
+        self.last_communication_state.pop(source, None)
+        self.communication_failures.pop(source, None)
 
     def prune_before(self, cutoff: str) -> tuple[int, int]:
         """Delete old samples/cycles and return their respective row counts."""
@@ -861,10 +1063,27 @@ def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
 
 
+def host_temperature_celsius() -> float | None:
+    """Read the Pi thermal zones without adding a psutil dependency."""
+    readings: list[float] = []
+    for sensor in Path("/sys/class/thermal").glob("thermal_zone*/temp"):
+        try:
+            readings.append(int(sensor.read_text(encoding="utf-8").strip()) / 1000.0)
+        except (OSError, ValueError):
+            continue
+    return max(readings) if readings else None
+
+
 def add_derived_samples(device: Device, samples: list[tuple[Register, int]]) -> list[tuple[Register, int]]:
     result = list(samples)
     by_key = {register.key: (register, raw) for register, raw in samples}
     for register, raw in samples:
+        if register.key == "input_terminal_status":
+            for signal, bit in terminal_signal_bits(device.model).items():
+                result.append((Register(
+                    f"terminal_{signal.lower()}", register.address, 1, "on/off", register.sampling,
+                    derived=True, record_history=register.record_history,
+                ), 1 if raw & (1 << bit) else 0))
         if register.key == "calculated_motor_speed" and device.machine_speed_factor is not None:
             result.append((Register(
                 "machine_speed", register.address,
@@ -917,6 +1136,7 @@ def process_recording_request(
     result_path = request_path.with_name("recording-result.json")
     try:
         request = json.loads(request_path.read_text(encoding="utf-8"))
+        operation_id = str(request.get("operation_id", "")).strip() or None
         action = str(request.get("action", "archive"))
         reference = str(request.get("reference", "")).strip()
         if not reference or len(reference) > 240:
@@ -944,16 +1164,49 @@ def process_recording_request(
                 counter += 1
             archived_to = str(archive_path)
         database.reinitialize(reference, archive_path)
-        result = {"status": "complete", "action": action, "reference": reference, "archived_to": archived_to}
+        result = {"status": "complete", "operation_id": operation_id, "action": action, "reference": reference, "archived_to": archived_to}
         LOG.warning("recording database reinitialized: action=%s reference=%r archive=%s", action, reference, archived_to)
         result_path.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
         return database
     except Exception as error:
-        result_path.write_text(json.dumps({"status": "error", "detail": str(error)}), encoding="utf-8")
+        result_path.write_text(json.dumps({"status": "error", "operation_id": locals().get("operation_id"), "detail": str(error)}), encoding="utf-8")
         LOG.error("recording database reinitialization failed: %s", error)
         return database
     finally:
         request_path.unlink(missing_ok=True)
+
+
+def run_proxy_administration(config: dict[str, Any], stop: threading.Event) -> None:
+    """Process recording administration without entering the serial forwarding path."""
+    database_path = Path(config["storage"]["database"])
+    request_path = database_path.parent / "recording-request.json"
+    database: Database | None = None
+    LOG.info("proxy administration worker started")
+    try:
+        while not stop.is_set():
+            try:
+                if database is None:
+                    database = Database(
+                        database_path,
+                        config["storage"].get("change_logging"),
+                        str(config.get("recording", {}).get("reference", "")).strip(),
+                        condition_rules(config),
+                    )
+                database = process_recording_request(
+                    database, database_path, config["storage"].get("change_logging", {}), request_path
+                )
+                stop.wait(0.25)
+            except Exception as error:
+                LOG.error("proxy administration worker recovering after error: %s", error)
+                if database is not None:
+                    try: database.close()
+                    except Exception: pass
+                database = None
+                stop.wait(1.0)
+    finally:
+        if database is not None:
+            database.close()
+        LOG.info("proxy administration worker stopped")
 
 
 def process_engineering_request(
@@ -1025,6 +1278,22 @@ def process_channels_request(devices: list[Device], request_path: Path) -> list[
         request_path.unlink(missing_ok=True)
 
 
+def process_conditions_request(database: Database, request_path: Path) -> None:
+    if not request_path.is_file():
+        return
+    result_path = request_path.with_name("conditions-result.json")
+    try:
+        request = json.loads(request_path.read_text(encoding="utf-8"))
+        rules = condition_rules(request["config"])
+        database.configure_condition_rules(rules)
+        result_path.write_text(json.dumps({"status": "complete", "rules": len(rules)}), encoding="utf-8")
+    except Exception as error:
+        result_path.write_text(json.dumps({"status": "error", "detail": str(error)}), encoding="utf-8")
+        LOG.exception("condition configuration reload failed")
+    finally:
+        request_path.unlink(missing_ok=True)
+
+
 def parse_pcm_template(content: str) -> tuple[list[str], list[tuple[int, int, int, int]]]:
     """Parse PCM002Z ASCII data while preserving its eight-line header."""
     lines = content.replace("\r\n", "\n").replace("\r", "\n").splitlines()
@@ -1065,6 +1334,10 @@ def parameter_backup_files(directory: Path, inverter_name: str) -> list[Path]:
     )
 
 
+def collector_for_device(collector_or_buses: Collector | dict[str, Collector], device: Device) -> Collector:
+    return collector_or_buses[device.bus_id] if isinstance(collector_or_buses, dict) else collector_or_buses
+
+
 def pcm_display_value(original_value: int, raw_value: int) -> int:
     """Preserve PCM002Z's signed decimal convention when the template proves it."""
     if original_value < 0 and raw_value >= 0x8000:
@@ -1073,7 +1346,7 @@ def pcm_display_value(original_value: int, raw_value: int) -> int:
 
 
 def process_parameter_backup_request(
-    collector: Collector, devices: list[Device], request_path: Path, output_dir: Path
+    collector: Collector | dict[str, Collector], devices: list[Device], request_path: Path, output_dir: Path
 ) -> None:
     if not request_path.is_file():
         return
@@ -1084,11 +1357,12 @@ def process_parameter_backup_request(
         device = next((item for item in devices if item.name == name), None)
         if device is None:
             raise ValueError(f"unknown inverter: {name}")
+        selected_collector = collector_for_device(collector, device)
         header, records = parse_pcm_template(str(request["content"]))
         if not pcm_template_matches_model(header, device.model):
             raise ValueError(f"PCM template model {header[1]}{header[2]} does not match {device.model}")
         registers = [Register(f"parameter_{address:04X}", address, 1, "raw", "information") for address, _, _, _ in records]
-        samples, errors, _stats = collector.poll(device, registers)
+        samples, errors, _stats = selected_collector.poll(device, registers)
         values = {register.address: raw for register, raw in samples}
         missing = [(address, original) for address, original, _, _ in records if address not in values]
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -1147,7 +1421,7 @@ def confirm_safe_parameter_write_state(collector: Collector, device: Device) -> 
         time.sleep(0.15)
 
 
-def process_parameter_preflight_request(collector: Collector, devices: list[Device], request_path: Path) -> None:
+def process_parameter_preflight_request(collector: Collector | dict[str, Collector], devices: list[Device], request_path: Path) -> None:
     if not request_path.is_file():
         return
     result_path = request_path.with_name("parameter-preflight-result.json")
@@ -1157,7 +1431,7 @@ def process_parameter_preflight_request(collector: Collector, devices: list[Devi
         device = next((item for item in devices if item.name == name), None)
         if device is None or device.model != "VF-AS1":
             raise ValueError("parameter preflight is currently limited to VF-AS1")
-        confirm_safe_parameter_write_state(collector, device)
+        confirm_safe_parameter_write_state(collector_for_device(collector, device), device)
         result_path.write_text(json.dumps({"status": "ready", "checked_at": utc_now(), "inverter": name}), encoding="utf-8")
     except Exception as error:
         result_path.write_text(json.dumps({"status": "blocked", "detail": str(error)}), encoding="utf-8")
@@ -1167,7 +1441,7 @@ def process_parameter_preflight_request(collector: Collector, devices: list[Devi
 
 
 def process_parameter_write_request(
-    database: Database, collector: Collector, devices: list[Device], request_path: Path
+    database: Database, collector: Collector | dict[str, Collector], devices: list[Device], request_path: Path
 ) -> None:
     if not request_path.is_file():
         return
@@ -1182,15 +1456,16 @@ def process_parameter_write_request(
         device = next((item for item in devices if item.name == name), None)
         if device is None or device.model != "VF-AS1":
             raise ValueError("single parameter writing is currently limited to VF-AS1")
+        selected_collector = collector_for_device(collector, device)
         if not 1 <= len(changes) <= 32 or len({address for address, _target in changes}) != len(changes):
             raise ValueError("write request must contain 1 to 32 distinct parameters")
         if any(parameter_safety_class(address, 1, device.model) != "candidate" or not 0 <= target <= 0xFFFF for address, target in changes):
             raise ValueError("write request contains an invalid configuration candidate")
         for address, target in changes:
-            confirm_safe_parameter_write_state(collector, device)
-            old = collector.read_register(Register("parameter", address, 1, "raw"), device.slave_id)
-            collector.write_register(address, target, device.slave_id)
-            verified = collector.read_register(Register("parameter", address, 1, "raw"), device.slave_id)
+            confirm_safe_parameter_write_state(selected_collector, device)
+            old = selected_collector.read_register(Register("parameter", address, 1, "raw"), device.slave_id)
+            selected_collector.write_register(address, target, device.slave_id)
+            verified = selected_collector.read_register(Register("parameter", address, 1, "raw"), device.slave_id)
             if verified != target:
                 raise RuntimeError(f"write verification failed for {address:04X}: expected {target}, read {verified}")
             with database.connection:
@@ -1212,6 +1487,170 @@ def process_parameter_write_request(
         request_path.unlink(missing_ok=True)
 
 
+def run_addon_collector(
+    definition: Any, database_path: Path, change_logging: dict[str, Any],
+    recording_reference: str, stop: threading.Event, config_path: Path | None = None,
+) -> None:
+    """Poll one I²C card independently of Modbus and serial Modbus.
+
+    Each thread owns its SQLite connection. I²C transfers themselves are
+    serialized through ``ADDON_I2C_LOCK``; this keeps physical HAT reads
+    atomic while still isolating their timing from RS-485 reconnects.
+    """
+    # SequentAddon.changes() already applies each channel's engineering
+    # threshold and its system-card heartbeat.  Applying the global Modbus
+    # change logger a second time can suppress even the initial Fan/UPS point.
+    initial_config = load_config(config_path) if config_path and config_path.exists() else {}
+    database = Database(database_path, {**change_logging, "enabled": False}, recording_reference,
+                        condition_rules(initial_config))
+    runtime = SequentAddon(definition, fan_policy_path=database_path.parent / "smart-fan-policy.json")
+    next_due = 0.0
+    next_error_log = 0.0
+    unavailable = False
+    # A card can be healthy while every user-facing channel is disabled.
+    # Persist exactly one empty successful cycle on start/reload and after an
+    # outage so a historical failure cannot remain the card's current health.
+    # Normal empty polls stay write-free to avoid database churn.
+    health_confirmed = False
+    config_mtime = config_path.stat().st_mtime_ns if config_path and config_path.exists() else None
+    recording_identity = database.recording_identity()
+    next_recording_check = 0.0
+    LOG.info("add-on collector started: %s (stack %d)", definition.label, definition.stack)
+
+    def store_addon_cycle(observed_at: str, registers: list[tuple[Register, int]], errors: list[str]) -> bool:
+        """Wait out recording maintenance without misreporting an I²C card failure."""
+        nonlocal recording_identity, health_confirmed
+        delay = 0.02
+        retries = 0
+        while not stop.is_set():
+            try:
+                current_identity = database.recording_identity()
+                if current_identity != recording_identity:
+                    recording_identity = current_identity
+                    runtime.reset_recording_baseline()
+                    database.reset_source_state(runtime.definition.source_name, -(runtime.definition.stack + 1))
+                    health_confirmed = False
+                    LOG.info("add-on discarded pre-reset sample and reset baseline: %s", runtime.definition.label)
+                    return False
+                database.store_cycle(observed_at, runtime.definition.source_name,
+                                     -(runtime.definition.stack + 1), registers, errors)
+                return True
+            except sqlite3.OperationalError as error:
+                if "locked" not in str(error).lower() and "busy" not in str(error).lower():
+                    raise
+                retries += 1
+                if retries == 1 or retries % 100 == 0:
+                    LOG.warning("add-on persistence waiting for recording maintenance: %s", runtime.definition.label)
+                stop.wait(delay)
+                delay = min(0.5, delay * 1.5)
+        raise RuntimeError("collector stopping")
+    try:
+        while not stop.is_set():
+            # Recording reinitialization is performed by the Modbus collector
+            # on its own SQLite connection.  An add-on keeps separate runtime
+            # and database caches, so it must explicitly create a fresh
+            # baseline afterwards.  Digital 0 and 1 are both valid states.
+            check_now = time.monotonic()
+            if check_now >= next_recording_check:
+                next_recording_check = check_now + 0.5
+                current_identity = database.recording_identity()
+                if current_identity != recording_identity:
+                    recording_identity = current_identity
+                    runtime.reset_recording_baseline()
+                    database.reset_source_state(runtime.definition.source_name, -(runtime.definition.stack + 1))
+                    health_confirmed = False
+                    LOG.info("add-on recording generation reset: %s", runtime.definition.label)
+            if config_path and config_path.exists():
+                current_mtime = config_path.stat().st_mtime_ns
+                if current_mtime != config_mtime:
+                    config_mtime = current_mtime
+                    try:
+                        updated = next(item for item in configured_addons(load_config(config_path)) if item.identifier == definition.identifier)
+                        runtime.close()
+                        runtime = SequentAddon(updated, fan_policy_path=database_path.parent / "smart-fan-policy.json")
+                        database.configure_condition_rules(condition_rules(load_config(config_path)))
+                        definition = updated
+                        health_confirmed = False
+                        LOG.info("add-on channel configuration reloaded: %s", definition.label)
+                    except StopIteration:
+                        LOG.warning("configured add-on was removed: %s", definition.identifier)
+                        break
+                    except Exception as error:
+                        LOG.warning("add-on configuration reload failed: %s", error)
+            # A disabled card stays owned by this lightweight worker so it can
+            # be re-enabled from the UI without a service restart.  Crucially,
+            # it performs no I²C transaction while switched off.
+            if not definition.enabled:
+                stop.wait(0.5)
+                continue
+            now = time.monotonic()
+            if now < next_due:
+                stop.wait(max(0.001, next_due - now))
+                continue
+            observed_at = utc_now()
+            try:
+                with ADDON_I2C_LOCK:
+                    samples = runtime.changes(now)
+                if unavailable:
+                    LOG.info("add-on communication restored: %s", runtime.definition.label)
+                    unavailable = False
+                registers = [
+                    (Register(sample.metric, 0xE000 + index, sample.value / sample.raw_value if sample.raw_value else 1.0,
+                              sample.unit, "fast", record_history=sample.record_history, label=sample.label), sample.raw_value)
+                    for index, sample in enumerate(samples)
+                ]
+                if registers or not health_confirmed:
+                    stored = store_addon_cycle(observed_at, registers, [])
+                    if not stored:
+                        continue
+                    if not health_confirmed:
+                        LOG.info("add-on communication verified: %s", runtime.definition.label)
+                    health_confirmed = True
+            except Exception as error:
+                detail = f"{runtime.definition.label}: {error}"
+                if now >= next_error_log:
+                    store_addon_cycle(observed_at, [], [detail])
+                    LOG.warning("add-on unavailable: %s", detail)
+                    next_error_log = now + 1.0
+                unavailable = True
+                health_confirmed = False
+                # A disconnected card needs no high-frequency reprobe.  Apart
+                # from avoiding needless I²C traffic, this protects against
+                # third-party drivers that allocate resources during a failed
+                # detection attempt.
+                next_due = max(next_due, now + 2.0)
+            while next_due <= now:
+                next_due += runtime.definition.interval_seconds
+    finally:
+        runtime.close()
+        database.close()
+        LOG.info("add-on collector stopped")
+
+
+def start_addon_collectors(
+    config: dict[str, Any], database_path: Path, stop: threading.Event,
+) -> list[threading.Thread]:
+    """Start independent Sequent workers for normal and proxy operation."""
+    change_logging = config["storage"].get("change_logging", {
+        "enabled": True,
+        "default_analog_delta": 0.1,
+        "thresholds": DEFAULT_CHANGE_THRESHOLDS,
+    })
+    recording_reference = str(config.get("recording", {}).get("reference", "")).strip()
+    config_path = Path(config["_config_path"]) if config.get("_config_path") else None
+    threads: list[threading.Thread] = []
+    for definition in configured_addons(config):
+        thread = threading.Thread(
+            target=run_addon_collector,
+            args=(definition, database_path, change_logging, recording_reference, stop),
+            kwargs={"config_path": config_path} if config_path else {},
+            name=f"tmm-addon-{definition.identifier}", daemon=True,
+        )
+        thread.start()
+        threads.append(thread)
+    return threads
+
+
 def run(config: dict[str, Any], once: bool = False) -> int:
     stop = threading.Event()
     if not once:
@@ -1225,16 +1664,32 @@ def run(config: dict[str, Any], once: bool = False) -> int:
     })
     database_path = Path(config["storage"]["database"])
     recording_reference = str(config.get("recording", {}).get("reference", "")).strip()
-    database = Database(database_path, change_logging, recording_reference)
+    database = Database(database_path, change_logging, recording_reference, condition_rules(config))
     recording_request = database_path.parent / "recording-request.json"
     engineering_request = database_path.parent / "engineering-request.json"
     channels_request = database_path.parent / "channels-request.json"
+    conditions_request = database_path.parent / "conditions-request.json"
     parameter_backup_request = database_path.parent / "parameter-backup-request.json"
     parameter_backup_dir = database_path.parent / "parameter-backups"
     parameter_preflight_request = database_path.parent / "parameter-preflight-request.json"
     parameter_write_request = database_path.parent / "parameter-write-request.json"
-    collector = Collector(config)
+    collectors = {
+        identifier: Collector({**config, "serial": settings})
+        for identifier, settings in configured_serial_buses(config).items()
+    }
     devices = configured_devices(config)
+    addon_runtimes = [SequentAddon(definition) for definition in configured_addons(config)]
+    addon_threads: list[threading.Thread] = []
+    if addon_runtimes and not once:
+        for runtime in addon_runtimes:
+            thread = threading.Thread(
+                target=run_addon_collector,
+                args=(runtime.definition, database_path, change_logging, recording_reference, stop),
+                kwargs={"config_path": Path(config.get("_config_path", ""))} if config.get("_config_path") else {},
+                name=f"tmm-addon-{runtime.definition.identifier}", daemon=True,
+            )
+            thread.start()
+            addon_threads.append(thread)
     polling_config = config["polling"]
     legacy_interval = float(polling_config.get("interval_seconds", 1.0))
     configured_intervals = polling_config.get("intervals", {})
@@ -1252,6 +1707,9 @@ def run(config: dict[str, Any], once: bool = False) -> int:
     next_cleanup = 0.0
     next_due = {sampling: 0.0 for sampling in intervals}
     next_status_log = 0.0
+    thermal_state = "normal"
+    thermal_factor = 1
+    thermal_cooled_below_limit = False
     LOG.info(
         "collector started for %d inverter(s): %s",
         len(devices),
@@ -1263,13 +1721,40 @@ def run(config: dict[str, Any], once: bool = False) -> int:
             database = process_recording_request(database, database_path, change_logging, recording_request)
             devices = process_engineering_request(database, devices, engineering_request)
             devices = process_channels_request(devices, channels_request)
-            process_parameter_backup_request(collector, devices, parameter_backup_request, parameter_backup_dir)
-            process_parameter_preflight_request(collector, devices, parameter_preflight_request)
-            process_parameter_write_request(database, collector, devices, parameter_write_request)
+            process_conditions_request(database, conditions_request)
+            process_parameter_backup_request(collectors, devices, parameter_backup_request, parameter_backup_dir)
+            process_parameter_preflight_request(collectors, devices, parameter_preflight_request)
+            process_parameter_write_request(database, collectors, devices, parameter_write_request)
+            temperature = host_temperature_celsius()
+            if temperature is not None:
+                if thermal_state == "normal" and temperature >= 75.0:
+                    thermal_state, thermal_factor, thermal_cooled_below_limit = "throttled", 2, False
+                    database.store_thermal_event(utc_now(), thermal_state, temperature, thermal_factor, "Pi temperature reached 75 °C; polling interval doubled")
+                    LOG.warning("thermal protection throttled polling at %.1f °C", temperature)
+                elif thermal_state == "throttled":
+                    if temperature < 70.0:
+                        thermal_state, thermal_factor, thermal_cooled_below_limit = "normal", 1, False
+                        database.store_thermal_event(utc_now(), thermal_state, temperature, thermal_factor, "Pi cooled below 70 °C; normal polling restored")
+                        LOG.info("thermal protection restored normal polling at %.1f °C", temperature)
+                    elif temperature < 75.0:
+                        thermal_cooled_below_limit = True
+                    elif thermal_cooled_below_limit:
+                        thermal_state, thermal_factor = "paused", 2
+                        database.store_thermal_event(utc_now(), thermal_state, temperature, thermal_factor, "Pi temperature crossed 75 °C again while throttled; polling paused")
+                        LOG.error("thermal protection paused polling at %.1f °C", temperature)
+                elif thermal_state == "paused" and temperature < 70.0:
+                    thermal_state, thermal_factor, thermal_cooled_below_limit = "normal", 1, False
+                    database.store_thermal_event(utc_now(), thermal_state, temperature, thermal_factor, "Pi cooled below 70 °C; polling resumed")
+                    LOG.info("thermal protection resumed polling at %.1f °C", temperature)
+            if thermal_state == "paused":
+                stop.wait(1.0)
+                continue
             cycle_start = time.monotonic()
             due = list(intervals) if once else [name for name in intervals if cycle_start >= next_due[name]]
-            if not due:
-                stop.wait(max(0.001, min(next_due.values()) - cycle_start))
+            due_addons = addon_runtimes if once else []
+            if not due and not due_addons:
+                wake_at = min([*next_due.values()] or [cycle_start + 1.0])
+                stop.wait(max(0.001, wake_at - cycle_start))
                 continue
             all_errors = []
             displayed_samples = []
@@ -1280,15 +1765,37 @@ def run(config: dict[str, Any], once: bool = False) -> int:
                     if not registers:
                         continue
                     observed_at = utc_now()
-                    samples, errors, stats = collector.poll(device, registers)
+                    samples, errors, stats = collectors[device.bus_id].poll(device, registers)
                     samples = add_derived_samples(device, samples)
                     database.store_cycle(observed_at, device.name, device.slave_id, samples, errors, stats)
                     any_samples = any_samples or bool(samples)
                     all_errors.extend(f"{device.name}: {error}" for error in errors)
                     displayed_samples.extend((device, register, raw) for register, raw in samples)
+            for runtime in due_addons:
+                observed_at = utc_now()
+                try:
+                    addon_samples = runtime.changes(cycle_start)
+                    addon_registers = [
+                        (Register(sample.metric, 0xE000 + index, sample.value / sample.raw_value if sample.raw_value else 1.0, sample.unit, "fast", record_history=sample.record_history, label=sample.label), sample.raw_value)
+                        for index, sample in enumerate(addon_samples)
+                    ]
+                    if addon_registers:
+                        database.store_cycle(observed_at, runtime.definition.source_name, -(runtime.definition.stack + 1), addon_registers, [])
+                        any_samples = True
+                except Exception as error:
+                    detail = f"{runtime.definition.label}: {error}"
+                    database.store_cycle(observed_at, runtime.definition.source_name, -(runtime.definition.stack + 1), [], [detail])
+                    LOG.warning("add-on unavailable: %s", detail)
+                    all_errors.append(detail)
+            # Schedule from the end of the work, not its start.  A complete
+            # Modbus round can legitimately take longer than a fast sampling
+            # interval.  Advancing only to ``cycle_start`` in that case leaves
+            # every due time in the past and turns the collector into a busy
+            # loop which continuously tries to catch up.
+            completed_at = time.monotonic()
             for sampling in due:
-                while next_due[sampling] <= cycle_start:
-                    next_due[sampling] += intervals[sampling]
+                while next_due[sampling] <= completed_at:
+                    next_due[sampling] += intervals[sampling] * thermal_factor
             if retention_days > 0 and time.monotonic() >= next_cleanup:
                 cutoff = (datetime.now(timezone.utc) - timedelta(days=retention_days)).isoformat(timespec="milliseconds")
                 deleted_samples, deleted_cycles = database.prune_before(cutoff)
@@ -1307,10 +1814,15 @@ def run(config: dict[str, Any], once: bool = False) -> int:
                 for device, register, raw in displayed_samples:
                     print(f"{device.name}.{register.key}=0x{raw:04X} ({raw * register.scale:g} {register.unit})")
                 return 1 if all_errors else 0
-            delay = reconnect_delay if not any_samples else max(0.0, min(next_due.values()) - time.monotonic())
+            wake_at = min([*next_due.values()] or [time.monotonic() + reconnect_delay])
+            delay = reconnect_delay if not any_samples else max(0.0, wake_at - time.monotonic())
             stop.wait(delay)
     finally:
-        collector.close()
+        stop.set()
+        for thread in addon_threads:
+            thread.join(timeout=5.0)
+        for collector in collectors.values():
+            collector.close()
         database.close()
         LOG.info("collector stopped")
     return 0
@@ -1324,7 +1836,46 @@ def main() -> int:
     args = parser.parse_args()
     logging.basicConfig(level=getattr(logging, args.log_level), format="%(asctime)s %(levelname)s %(message)s")
     try:
-        return run(load_config(args.config), once=args.once)
+        settings = load_config(args.config)
+        settings["_config_path"] = str(args.config)
+        bridge = settings.get("communication_bridge", {})
+        if isinstance(bridge, dict) and bridge.get("enabled", False):
+            if args.once:
+                LOG.info("proxy one-shot mode waits for one upstream transaction")
+            from tmm_proxy import run_proxy
+            # A proxy-only first start must still create the common schema used
+            # by the web application before the dedicated frame table is added.
+            database = Database(
+                Path(settings["storage"]["database"]),
+                settings["storage"].get("change_logging"),
+                str(settings.get("recording", {}).get("reference", "")).strip(),
+                condition_rules(settings),
+            )
+            database.close()
+            stop = threading.Event()
+            addon_threads: list[threading.Thread] = []
+            administration_thread: threading.Thread | None = None
+            if not args.once:
+                signal.signal(signal.SIGTERM, lambda *_: stop.set())
+                signal.signal(signal.SIGINT, lambda *_: stop.set())
+                addon_threads = start_addon_collectors(
+                    settings, Path(settings["storage"]["database"]), stop
+                )
+                administration_thread = threading.Thread(
+                    target=run_proxy_administration,
+                    args=(settings, stop),
+                    name="tmm-proxy-administration", daemon=True,
+                )
+                administration_thread.start()
+            try:
+                return run_proxy(settings, stop, once=args.once)
+            finally:
+                stop.set()
+                for thread in addon_threads:
+                    thread.join(timeout=5.0)
+                if administration_thread is not None:
+                    administration_thread.join(timeout=10.0)
+        return run(settings, once=args.once)
     except PortRecoveryRequired as error:
         LOG.error("serial recovery required: %s", error)
         return 75

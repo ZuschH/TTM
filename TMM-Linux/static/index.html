@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Toshiba Modbus Monitor (TMM) · V1.0</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>Toshiba Modbus Monitor (TMM) · Version 1.3</title>
+  <link rel="stylesheet" href="/static/style.css?v=1.3.0">
 </head>
 <body>
   <header>
     <div>
-      <p class="eyebrow" data-i18n="header.eyebrow">TMM · Version 1.0</p>
+      <p class="eyebrow" data-i18n="header.eyebrow">TMM · Version 1.3</p>
       <h1 data-i18n="header.title">Toshiba Modbus Monitor</h1>
     </div>
     <div class="header-actions">
@@ -48,23 +48,62 @@
       <div id="cards" class="cards"></div>
     </section>
 
-    <section class="io-panel" aria-labelledby="io-title">
+    <section class="panel addon-panel" aria-labelledby="addons-title">
       <div class="section-heading">
-        <div><p class="eyebrow" data-i18n="io.eyebrow">Hardware</p><h2 id="io-title" data-i18n="io.title">Terminals &amp; analog output</h2></div>
+        <div><p class="eyebrow" data-i18n="addons.eyebrow">Add-ons</p><h2 id="addons-title" data-i18n="addons.title">External I/O</h2></div>
+        <label class="hardware-reference-toggle"><input id="hardware-reference-toggle" type="checkbox" checked><span data-i18n="addons.showReferences">Show supported hardware</span></label>
       </div>
-      <div id="io-devices" class="io-devices"><p class="hint" data-i18n="io.waiting">Waiting for I/O data …</p></div>
+      <p id="addons-help" class="hint" data-i18n="addons.none">No external I/O add-ons are configured.</p>
+      <div id="addon-devices" class="addon-devices"></div>
+    </section>
+
+    <section class="panel addon-panel" aria-labelledby="ups-title">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="ups.eyebrow">System</p><h2 id="ups-title" data-i18n="ups.title">System power &amp; cooling</h2></div></div>
+      <p id="ups-help" class="hint" data-i18n="ups.none">No system power or cooling add-on is configured.</p>
+      <div id="ups-devices" class="addon-devices"></div>
     </section>
 
     <section class="panel" aria-labelledby="history-title">
       <div class="section-heading">
         <div><p class="eyebrow" data-i18n="history.eyebrow">History</p><h2 id="history-title" data-i18n="history.title">Measurement history</h2></div>
-        <label><span data-i18n="history.metric">Metric</span> <select id="metric"></select></label>
       </div>
       <div class="chart-wrap">
         <canvas id="chart" role="img" aria-label="Zeitverlauf des gewählten Messwerts"></canvas>
         <p id="chart-empty" data-i18n="history.empty">No history data available.</p>
+        <div id="chart-tooltip" class="chart-tooltip" role="status" hidden></div>
       </div>
       <div id="chart-meta" class="chart-meta"></div>
+      <div class="chart-actions"><button id="history-reset-view" type="button" data-i18n="history.resetView">Reset zoom &amp; pan</button></div>
+      <div id="history-markers" class="history-markers" hidden></div>
+      <details id="history-channels" class="history-channels"><summary data-i18n="history.configure">Configure channels</summary><label><span data-i18n="history.source">Data source</span><select id="history-inverter"></select></label><div class="history-channel-actions"><button id="history-select-all" type="button" data-i18n="history.selectAll">All</button><button id="history-select-none" type="button" data-i18n="history.selectNone">None</button><button id="history-stop-source-recording" type="button" data-i18n="history.stopSourceRecording">Stop recording this source</button><button id="history-stop-all-recording" type="button" data-i18n="history.stopAllRecording">Stop all recording</button></div><p id="history-recording-result" class="hint" role="status"></p><div id="history-channel-list" class="history-channel-list"></div></details><select id="metric" hidden></select>
+    </section>
+
+    <section class="panel conditions-panel" aria-labelledby="conditions-title">
+      <div class="section-heading"><div><p class="eyebrow" data-i18n="conditions.eyebrow">Monitoring</p><h2 id="conditions-title" data-i18n="conditions.title">Condition monitoring & milestones</h2></div></div>
+      <p class="hint" data-i18n="conditions.help">Create persistent events from measured conditions. Equality uses the configured tolerance.</p>
+      <form id="condition-form" class="condition-form">
+        <input id="condition-id" type="hidden">
+        <label><span data-i18n="conditions.name">Rule name</span><input id="condition-name" maxlength="120" required></label>
+        <label><span data-i18n="conditions.channel">Operand / channel</span><select id="condition-channel" required></select></label>
+        <label><span data-i18n="conditions.operator">Operator</span><select id="condition-operator"><option>&gt;</option><option>&gt;=</option><option>&lt;</option><option>&lt;=</option><option>=</option><option>!=</option><option>NOT</option></select></label>
+        <label><span data-i18n="conditions.value">Comparison value</span><input id="condition-value" type="number" step="any" value="0"></label>
+        <label><span data-i18n="conditions.duration">Minimum duration (s)</span><input id="condition-duration" type="number" min="0" step="0.1" value="0"></label>
+        <label><span data-i18n="conditions.hysteresis">Hysteresis</span><input id="condition-hysteresis" type="number" min="0" step="any" value="0"></label>
+        <label><span data-i18n="conditions.tolerance">Equality tolerance</span><input id="condition-tolerance" type="number" min="0" step="any" value="0"></label>
+        <div class="condition-group-controls">
+          <label><span data-i18n="conditions.logic">Combine operands with</span><select id="condition-logic"><option>AND</option><option>OR</option><option>XOR</option></select></label>
+          <button id="condition-add-operand" type="button" data-i18n="conditions.addOperand">Add operand</button>
+        </div>
+        <div id="condition-operands" class="condition-operands"></div>
+        <label><span data-i18n="conditions.severity">Severity</span><select id="condition-severity"><option value="info" data-i18n="alerts.info">Information</option><option value="warning" data-i18n="alerts.warning">Warning</option><option value="critical" data-i18n="alerts.critical">Critical</option></select></label>
+        <label class="condition-enabled"><input id="condition-enabled" type="checkbox" checked><span data-i18n="conditions.enabled">Enabled</span></label>
+        <div class="condition-expression-field"><span data-i18n="conditions.expression">Rule expression</span><output id="condition-expression" class="condition-expression" aria-live="polite"></output></div>
+        <div class="condition-actions"><button class="button" type="submit" data-i18n="conditions.save">Save rule</button><button id="condition-reset" type="button" data-i18n="conditions.new">New rule</button></div>
+      </form>
+      <p id="condition-result" class="hint"></p>
+      <div id="condition-rules" class="condition-rules"></div>
+      <h3 data-i18n="conditions.milestones">Recent milestones</h3>
+      <div id="condition-milestones" class="condition-milestones"></div>
     </section>
 
     <section class="panel fault-panel" aria-labelledby="fault-title">
@@ -79,7 +118,7 @@
         <div><p class="eyebrow" data-i18n="storage.eyebrow">Data</p><h2 id="storage-title" data-i18n="storage.title">Storage &amp; export</h2></div>
         <div class="export-actions">
           <a id="export" class="button" href="/api/v1/export.csv" data-i18n="storage.exportAll">Export all data as CSV</a>
-          <a id="export-selected" class="button compact-button" href="/api/v1/export.csv" hidden></a>
+          <a id="export-selected" class="button compact-button" href="/api/v1/export.csv" hidden data-i18n="storage.exportSelected">Export selected channels as CSV</a>
         </div>
       </div>
       <dl id="storage"></dl>
@@ -102,15 +141,6 @@
       </details>
     </section>
 
-    <section class="panel compact" aria-labelledby="channels-title">
-      <div class="section-heading"><div><p class="eyebrow" data-i18n="channels.eyebrow">Recording</p><h2 id="channels-title" data-i18n="channels.title">Measurement channels</h2></div></div>
-      <div class="channel-toolbar"><label><span data-i18n="channels.inverter">Inverter</span><select id="channels-inverter"></select></label><label class="measurement-hints-toggle"><input id="measurement-hints" type="checkbox"><span data-i18n="channels.hints">Show measurement hints</span></label></div>
-      <p class="hint" data-i18n="channels.help">Off reduces bus load; Live shows the current value without history; Record stores value changes.</p>
-      <div id="channel-list" class="channel-list"></div>
-      <div class="recording-actions"><button id="channels-save" class="button" type="button" data-i18n="channels.save">Apply channel selection</button></div>
-      <p id="channels-result" class="hint"></p>
-    </section>
-
     <section class="panel compact" aria-labelledby="comm-title">
       <div class="section-heading">
         <div><p class="eyebrow" data-i18n="comm.eyebrow">Diagnostics</p><h2 id="comm-title" data-i18n="comm.title">Communication</h2></div>
@@ -118,6 +148,34 @@
       </div>
       <dl id="diagnostics"></dl>
       <p id="last-error" class="error"></p>
+      <details id="rtu-logbook" class="rtu-logbook">
+        <summary data-i18n="rtu.title">Modbus RTU evidence logbook</summary>
+        <div class="rtu-logbook-heading"><p data-i18n="rtu.help">Recent raw proxy transactions with independently calculated CRC.</p><button id="rtu-refresh" type="button" data-i18n="rtu.refresh">Refresh</button></div>
+        <div class="table-scroll"><table class="rtu-table"><thead><tr><th data-i18n="rtu.time">Time</th><th data-i18n="rtu.origin">Origin</th><th data-i18n="rtu.outcome">Outcome</th><th data-i18n="rtu.request">Request</th><th data-i18n="rtu.requestCrc">Request CRC</th><th data-i18n="rtu.response">Inverter response</th><th data-i18n="rtu.responseCrc">Response CRC</th><th data-i18n="rtu.latency">Latency</th></tr></thead><tbody id="rtu-logbook-body"></tbody></table></div>
+        <p id="rtu-logbook-empty" class="hint" data-i18n="rtu.empty">No proxy transactions recorded.</p>
+      </details>
+    </section>
+
+    <section class="panel bridge-panel" aria-labelledby="bridge-title">
+      <div class="section-heading">
+        <div><p class="eyebrow" data-i18n="bridge.eyebrow">Bus observability</p><h2 id="bridge-title" data-i18n="bridge.title">Communication bridge &amp; bus observer</h2></div>
+        <span id="bridge-stage" class="bridge-stage" data-i18n="bridge.design">Design phase · inactive</span>
+      </div>
+      <p id="bridge-help" class="hint" data-i18n="bridge.help">Inline path between HMI and inverter.</p>
+      <p id="bridge-runtime-error" class="error" hidden></p>
+      <div class="bridge-topology" aria-label="HMI to TMM to inverter topology">
+        <article id="bridge-hmi-card"><span data-i18n="bridge.hmiFriendly">Adapter A · HMI / master</span><strong id="bridge-hmi-device">Not configured</strong><small id="bridge-hmi-format">—</small><small id="bridge-hmi-presence" class="bridge-presence"></small></article>
+        <div class="bridge-link" aria-hidden="true">⇄</div>
+        <article class="bridge-core"><span>TMM</span><strong data-i18n="bridge.proxy">Inline bridge</strong><small data-i18n="bridge.capture">Forward &amp; observe</small></article>
+        <div class="bridge-link" aria-hidden="true">⇄</div>
+        <article id="bridge-drive-card"><span data-i18n="bridge.driveFriendly">Adapter B · inverter / slave</span><strong id="bridge-drive-device">Not configured</strong><small id="bridge-drive-format">—</small><small id="bridge-drive-presence" class="bridge-presence"></small></article>
+      </div>
+      <div class="bridge-grid">
+        <div><h3 data-i18n="bridge.phases">Implementation phases</h3><ol id="bridge-phases" class="bridge-phases"></ol></div>
+        <div><h3 data-i18n="bridge.readiness">Safety readiness</h3><ul id="bridge-checks" class="bridge-checks"></ul></div>
+        <div><h3 data-i18n="bridge.observability">Planned observations</h3><div id="bridge-capabilities" class="bridge-capabilities"></div></div>
+      </div>
+      <p id="bridge-warning" class="bridge-warning" data-i18n="bridge.warning">Inline operation remains locked until deterministic forwarding, write de-duplication, watchdog behaviour, and an external hardware bypass have been verified.</p>
     </section>
 
     <section class="panel compact" aria-labelledby="engineering-title">
@@ -167,11 +225,12 @@
     <img src="/static/tmm-product-mark.png" alt="" width="112" height="112">
     <div>
       <strong>Toshiba Modbus Monitor</strong>
-      <p><span id="footer-version">Version 1.0.0</span> · <span data-i18n="footer.summary">read-only · refreshes every 3 seconds</span></p>
+      <p><span id="footer-version">Version 1.3.0</span> · <span data-i18n="footer.summary">monitoring with guarded parameter service · refreshes every 3 seconds</span></p>
       <p class="footer-links"><a href="/README.md" target="_blank" data-i18n="comm.manual">User manual</a><a href="/docs" data-i18n="comm.api">API documentation</a></p>
       <p id="footer-contact" hidden><span data-i18n="footer.contact">Contact</span>: <a id="footer-contact-link"></a></p>
     </div>
   </footer>
-  <script src="/static/app.js" defer></script>
+  <script src="/static/docs/sequent/availability.js?v=1.3.0"></script>
+  <script src="/static/app.js?v=1.3.0" defer></script>
 </body>
 </html>

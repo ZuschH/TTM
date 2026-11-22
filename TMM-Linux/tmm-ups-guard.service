@@ -1,0 +1,18 @@
+[Unit]
+Description=Toshiba Modbus Monitor (TMM) V1.3 UPS safe shutdown guard
+After=local-fs.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/tmm
+ExecStart=/opt/tmm/.venv/bin/python /opt/tmm/tmm_ups_guard.py --config /etc/tmm/config.json
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ReadOnlyPaths=/etc/tmm
+
+[Install]
+WantedBy=multi-user.target
