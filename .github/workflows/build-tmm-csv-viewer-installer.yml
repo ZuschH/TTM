@@ -1,0 +1,41 @@
+name: Build TMM CSV Viewer installer
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "TMM-CSV-Viewer-Windows/**"
+      - ".github/workflows/build-tmm-csv-viewer-installer.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          architecture: "x64"
+      - run: choco install innosetup --no-progress --yes
+      - working-directory: TMM-CSV-Viewer-Windows
+        run: |
+          .\installer\prepare-runtime.ps1 -PythonExe "${env:Python_ROOT_DIR}\python.exe"
+          .\installer\prepare-app.ps1
+          .\installer\build-installer.ps1
+      - working-directory: TMM-CSV-Viewer-Windows
+        run: |
+          $installer = "installer\output\TMM-CSV-Viewer-Setup-1.1.1.exe"
+          (Get-FileHash -Algorithm SHA256 $installer).Hash.ToLowerInvariant() |
+            Set-Content -Encoding ascii "installer\output\TMM-CSV-Viewer-Setup-1.1.1.exe.sha256"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.1.1
+          files: |
+            TMM-CSV-Viewer-Windows/installer/output/TMM-CSV-Viewer-Setup-1.1.1.exe
+            TMM-CSV-Viewer-Windows/installer/output/TMM-CSV-Viewer-Setup-1.1.1.exe.sha256
