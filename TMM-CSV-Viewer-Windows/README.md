@@ -49,13 +49,14 @@ a Modbus connection, or internet access.
 - reconstructs change-only recordings at the visible window boundaries:
   the last recorded value is held until the next change, preventing invented
   ramps between sparse records;
-- offers optional linear point-to-point display for CSV files whose values
-  were recorded cyclically, while keeping hold-last-value as the safe default;
+- offers hold-last-value, linear, and bounded spline curve styles; digital
+  signals always retain their factual rectangular representation;
 - calculates time-weighted averages instead of treating irregular change
   records as cyclic samples;
 - retains local minima and maxima when large datasets are reduced for drawing;
 - draws multiple selected measurements in one interactive chart;
-- shows pointer values and basic statistics;
+- shows pointer values, temporary click-to-add analysis markers with snapshots,
+  and basic statistics;
 - processes the CSV in the browser on the local Host-System only.
 - offers the complete user interface in US-English, German, French, and
   Japanese; the chosen language is retained in the local user profile, including
@@ -72,7 +73,7 @@ received from a remote TMM installation without connecting to that installation.
 
 ## Windows installation
 
-Use the self-contained `TMM-CSV-Viewer-Setup-1.0.0.exe` package. It installs a
+Use the self-contained `TMM-CSV-Viewer-Setup-1.1.1.exe` package. It installs a
 separate local viewer below `%ProgramFiles%\TMM CSV Viewer`, creates a Start
 Menu entry, and can optionally add a desktop shortcut. The viewer starts a
 local browser page on a free loopback port; no Windows service, Modbus adapter,
@@ -116,4 +117,18 @@ staging before compiling:
 
 Any working 64-bit Python installation can replace the `-PythonExe` value. The
 viewer itself uses only the Python standard library. The final executable is
-written to `installer\output\TMM-CSV-Viewer-Setup-1.0.0.exe`.
+written to `installer\output\TMM-CSV-Viewer-Setup-1.1.1.exe`.
+In addition to Toshiba data, the viewer recognizes the optional TMM V1.1
+`metric_label` export column used by Linux add-ons. Sequent external I/O
+channels retain their configured names, units and scaling in offline analysis.
+Digital `on/off` channels are drawn as stepped, colored digital tracks; analog
+channels are grouped under **External I/O** and use their exported engineering
+unit (for example `bar`). Older V1.0 CSV files remain fully supported.
+
+## Linux Master 1.3 CSV compatibility
+
+Viewer 1.1.1 accepts the current Linux Master 1.3.0 export schema, including
+communication samples and `system.thermal_protection` records. It preserves
+unknown columns and future channel names unchanged and offers a normalized
+UTF-8 export after inspection. See `docs/master-1.3-csv-compatibility.md` for
+the precisely verified interchange contract and current limits.
