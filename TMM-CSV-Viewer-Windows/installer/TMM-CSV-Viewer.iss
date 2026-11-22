@@ -11,7 +11,6 @@ DefaultDirName={autopf}\TMM CSV Viewer
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 PrivilegesRequired=admin
-SetupArchitecture=x64
 ArchitecturesAllowed=x64compatible
 MinVersion=10.0.17763
 WizardStyle=modern
