@@ -15,4 +15,4 @@ Build from an elevated PowerShell window on a Windows x64 host with Inno Setup
 
 `prepare-runtime.ps1` can also use any other working 64-bit Python executable.
 The viewer has no third-party Python dependencies. The generated setup is
-`installer\output\TMM-CSV-Viewer-Setup-1.0.0.exe`.
+`installer\output\TMM-CSV-Viewer-Setup-1.1.1.exe`.

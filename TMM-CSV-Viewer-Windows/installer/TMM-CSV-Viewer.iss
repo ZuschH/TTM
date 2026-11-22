@@ -1,5 +1,5 @@
 #define AppName "TMM CSV Viewer"
-#define AppVersion "1.0.0"
+#define AppVersion "1.1.1"
 #define AppId "{{89B56912-17EC-4D72-953C-277B4E43D7D7}"
 
 [Setup]

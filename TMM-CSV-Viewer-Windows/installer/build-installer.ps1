@@ -11,4 +11,4 @@ if (-not (Test-Path (Join-Path $installerDir "staging\app\tmm_csv_viewer.pyw")))
 if (-not (Test-Path (Join-Path $installerDir "staging\runtime\pythonw.exe"))) { throw "Runtime staging missing. Run prepare-runtime.ps1 first." }
 & $InnoCompiler (Join-Path $installerDir "TMM-CSV-Viewer.iss")
 if ($LASTEXITCODE -ne 0) { throw "Inno Setup compilation failed with exit code $LASTEXITCODE." }
-Get-FileHash -Algorithm SHA256 (Join-Path $installerDir "output\TMM-CSV-Viewer-Setup-1.0.0.exe") | Format-List
+Get-FileHash -Algorithm SHA256 (Join-Path $installerDir "output\TMM-CSV-Viewer-Setup-1.1.1.exe") | Format-List
